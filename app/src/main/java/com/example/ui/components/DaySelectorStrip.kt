@@ -227,7 +227,7 @@ fun DaySelectorStrip(
                     color = dowColor
                 )
 
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(0.dp))
 
                 // Day number (e.g. 14, 15, 16)
                 Text(
