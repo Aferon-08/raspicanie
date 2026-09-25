@@ -8,7 +8,6 @@ import android.content.Intent
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.example.MainActivity
 import com.example.R
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -55,7 +54,11 @@ class NotificationHelper(private val context: Context) {
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         val timeStr = timeFormat.format(Date(startTimeMillis))
 
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = (context.packageManager.getLaunchIntentForPackage(context.packageName)
+            ?: Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                setPackage(context.packageName)
+            }).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("selected_event_id", eventId)
         }
