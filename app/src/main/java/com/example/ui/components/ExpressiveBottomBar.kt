@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -87,19 +88,19 @@ fun ExpressiveBottomBar(
                 label = "nav_content"
             )
             val itemWidth by animateDpAsState(
-                targetValue = if (selected) 122.dp else 50.dp,
+                targetValue = if (selected) 92.dp else 56.dp,
                 animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
                 label = "nav_width"
             )
             val itemScale by animateFloatAsState(
-                targetValue = if (selected) 1f else 0.96f,
+                targetValue = if (selected) 1.04f else 0.94f,
                 animationSpec = spring(dampingRatio = 0.82f, stiffness = 550f),
                 label = "nav_scale"
             )
 
             Box(
                 modifier = Modifier
-                    .width(itemWidth)
+                    .weight(1f)
                     .graphicsLayer {
                         scaleX = itemScale
                         scaleY = itemScale
@@ -110,7 +111,7 @@ fun ExpressiveBottomBar(
                     modifier = Modifier
                         .background(containerColor, RoundedCornerShape(19.dp))
                         .clickable { onTabSelected(tab) }
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                        .padding(horizontal = 7.dp, vertical = 7.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -139,8 +140,8 @@ fun ExpressiveBottomBar(
                         Text(
                             text = label,
                             color = contentColor,
-                            fontSize = 12.sp,
-                            lineHeight = 14.sp,
+                            fontSize = 11.sp,
+                            lineHeight = 13.sp,
                             maxLines = 1
                         )
                     }
