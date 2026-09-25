@@ -133,16 +133,15 @@ fun ExpressiveBottomBar(
                         )
                     }
 
-                    if (selected) {
-                        Spacer(modifier = Modifier.width(7.dp))
-                        Text(
-                            text = label,
-                            color = contentColor,
-                            fontSize = 11.sp,
-                            lineHeight = 13.sp,
-                            maxLines = 1
-                        )
-                    }
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = label,
+                        color = contentColor,
+                        fontSize = 10.sp,
+                        lineHeight = 12.sp,
+                        fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Medium,
+                        maxLines = 1
+                    )
                 }
             }
         }
