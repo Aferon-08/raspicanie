@@ -99,9 +99,9 @@ fun DaySelectorStrip(
 
     LazyRow(
         state = listState,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
-        modifier = modifier.fillMaxWidth().height(76.dp)
+        modifier = modifier.fillMaxWidth().height(88.dp)
     ) {
         items(days, key = { it.dateMillis }) { day ->
             val isSelected = day.dateMillis == selectedDateMillis
@@ -136,7 +136,7 @@ fun DaySelectorStrip(
             )
 
             val selectedScale by animateFloatAsState(
-                targetValue = if (isSelected) 1f else 0.96f,
+                targetValue = if (isSelected) 1f else 0.98f,
                 animationSpec = spring(dampingRatio = 0.72f, stiffness = 500f),
                 label = "day_selected_scale"
             )
@@ -145,12 +145,12 @@ fun DaySelectorStrip(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(64.dp)
                     .graphicsLayer {
                         scaleX = selectedScale
                         scaleY = selectedScale
                     }
-                    .clip(RoundedCornerShape(if (isSelected) 16.dp else 15.dp))
+                    .clip(RoundedCornerShape(if (isSelected) 18.dp else 17.dp))
                     .background(containerColor)
                     .clickable { onDateSelected(day.dateMillis) }
                     .testTag("day_item_${day.dayOfMonth}")
@@ -158,17 +158,17 @@ fun DaySelectorStrip(
                 // Day of week (e.g. Пн, Вт, Ср)
                 Text(
                     text = day.dayOfWeek,
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                     color = dowColor
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 // Day number (e.g. 14, 15, 16)
                 Text(
                     text = day.dayOfMonth,
-                    fontSize = 18.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = domColor
                 )
@@ -177,7 +177,7 @@ fun DaySelectorStrip(
                     Spacer(modifier = Modifier.height(2.dp))
                     Box(
                         modifier = Modifier
-                            .size(3.dp)
+                            .size(4.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
                     )
