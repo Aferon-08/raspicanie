@@ -213,7 +213,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             _uiState.value = _uiState.value.copy(isSyncing = true)
             when (val result = repository.syncSchedule()) {
                 is SyncResult.Success -> {
-                    _uiState.value = _uiState.value.copy(isSyncing = false, syncFeedback = "Расписание актуально")
+                    _uiState.value = _uiState.value.copy(isSyncing = false, syncFeedback = null)
                 }
                 is SyncResult.SuccessWithChanges -> {
                     _uiState.value = _uiState.value.copy(
