@@ -3,6 +3,7 @@ package com.example.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,7 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.screens.BottomNavTab
@@ -88,9 +89,19 @@ fun ExpressiveBottomBar(
                 animationSpec = spring(dampingRatio = 0.78f, stiffness = 500f),
                 label = "nav_width"
             )
+            val itemScale by animateFloatAsState(
+                targetValue = if (selected) 1f else 0.94f,
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 550f),
+                label = "nav_scale"
+            )
 
             Box(
-                modifier = Modifier.width(itemWidth),
+                modifier = Modifier
+                    .width(itemWidth)
+                    .graphicsLayer {
+                        scaleX = itemScale
+                        scaleY = itemScale
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Column(
