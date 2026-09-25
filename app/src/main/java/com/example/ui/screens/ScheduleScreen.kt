@@ -5,6 +5,8 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -71,6 +73,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -334,17 +337,57 @@ fun ScheduleScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
+                        val cancelledToggleColor by animateColorAsState(
+                            targetValue = if (uiState.showCancelledClasses) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.errorContainer
+                            },
+                            animationSpec = tween(320),
+                            label = "cancelled_toggle_icon_color"
+                        )
+                        val cancelledToggleRotation by animateFloatAsState(
+                            targetValue = if (uiState.showCancelledClasses) 0f else -12f,
+                            animationSpec = spring(
+                                dampingRatio = 0.7f,
+                                stiffness = 500f
+                            ),
+                            label = "cancelled_toggle_icon_rotation"
+                        )
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 20.dp)
-                                .clip(RoundedCornerShape(18.dp))
+                                .clip(RoundedCornerShape(20.dp))
                                 .background(MaterialTheme.colorScheme.surfaceContainer)
-                                .padding(start = 14.dp, end = 8.dp, top = 7.dp, bottom = 7.dp)
+                                .padding(start = 10.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
                                 .animateContentSize(animationSpec = spring()),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(13.dp))
+                                    .background(cancelledToggleColor)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.EventBusy,
+                                    contentDescription = null,
+                                    tint = if (uiState.showCancelledClasses) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    },
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .rotate(cancelledToggleRotation)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Отменённые занятия",
@@ -353,7 +396,11 @@ fun ScheduleScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = if (uiState.showCancelledClasses) "Показывать в расписании" else "Скрыты из расписания",
+                                    text = if (uiState.showCancelledClasses) {
+                                        "Показывать в расписании"
+                                    } else {
+                                        "Скрыты из расписания"
+                                    },
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -414,7 +461,7 @@ fun ScheduleScreen(
                                                 durationMillis = 420,
                                                 delayMillis = 45
                                             ),
-                                            fadeOutSpec = tween(durationMillis = 220),
+                                            fadeOutSpec = tween(durationMillis = 360),
                                             placementSpec = spring()
                                         )
                                     )
