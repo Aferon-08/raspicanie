@@ -160,7 +160,7 @@ fun DaySelectorStrip(
         state = listState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
-        modifier = modifier.fillMaxWidth().height(96.dp)
+        modifier = modifier.fillMaxWidth().height(112.dp)
     ) {
         items(days, key = { it.dateMillis }) { day ->
             val isSelected = day.dateMillis == selectedDateMillis
