@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -160,7 +159,7 @@ fun DaySelectorStrip(
         state = listState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
-        modifier = modifier.fillMaxWidth().height(112.dp)
+        modifier = modifier.fillMaxWidth().height(96.dp)
     ) {
         items(days, key = { it.dateMillis }) { day ->
             val isSelected = day.dateMillis == selectedDateMillis
@@ -211,7 +210,6 @@ fun DaySelectorStrip(
                 verticalArrangement = Arrangement.Top,
                 modifier = Modifier
                     .size(68.dp)
-                    .padding(top = 13.dp)
                     .graphicsLayer {
                         scaleX = selectedScale
                         scaleY = selectedScale
@@ -235,6 +233,7 @@ fun DaySelectorStrip(
                 Text(
                     text = day.dayOfMonth,
                     fontSize = 20.sp,
+                    modifier = Modifier.graphicsLayer { translationY = -3.dp.toPx() },
                     fontWeight = FontWeight.Bold,
                     color = domColor
                 )
