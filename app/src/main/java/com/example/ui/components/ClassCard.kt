@@ -39,7 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberInfiniteTransition
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -195,8 +195,6 @@ fun ClassCard(
     onCardClick: (ClassEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Keep the card's clock alive independently from parent recompositions.
-    // This makes the progress bar and remaining-time label update every second.
     var liveTimeMillis by remember(event.id) {
         mutableLongStateOf(currentTimeMillis)
     }
@@ -211,11 +209,14 @@ fun ClassCard(
     val status = event.getStatus(liveTimeMillis)
     val startStr = ScheduleTimeFormatter.formatTime(event.startTimeMillis, is24HourFormat)
     val endStr = ScheduleTimeFormatter.formatTime(event.endTimeMillis, is24HourFormat)
-
     val isOngoing = status == ClassStatus.ONGOING
     val isCancelled = status == ClassStatus.CANCELLED
     val isCompleted = status == ClassStatus.COMPLETED
     val isUpcomingSoon = status == ClassStatus.UPCOMING_SOON
+
+    val room = event.displaySubgroups.firstOrNull()?.room?.takeIf { it.isNotBlank() }
+        ?: event.location
+    val roomText = room.replace("Кабинет ", "").replace("каб. ", "")
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -225,7 +226,6 @@ fun ClassCard(
         label = "class_press_scale"
     )
 
-    // Colors matching Material 3 Expressive
     val targetCardBackground = when {
         isOngoing -> MaterialTheme.colorScheme.primary
         isCancelled -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
@@ -249,7 +249,6 @@ fun ClassCard(
         isCompleted -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
         else -> MaterialTheme.colorScheme.onSurface
     }
-
     val contentSecondaryColor = when {
         isOngoing -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
         isCompleted -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
@@ -257,261 +256,246 @@ fun ClassCard(
     }
 
     Box(modifier = modifier.fillMaxWidth()) {
-    Card(
-        shape = RoundedCornerShape(30.dp),
-        colors = CardDefaults.cardColors(containerColor = cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = cardElevation),
-        modifier = modifier
-            .fillMaxWidth()
-            .graphicsLayer { scaleX = pressScale; scaleY = pressScale }
-            .clickable(interactionSource = interactionSource, indication = null) { onCardClick(event) }
-            .testTag("class_card_${event.id}")
-    ) {
-        Column(
+        Card(
+            shape = RoundedCornerShape(30.dp),
+            colors = CardDefaults.cardColors(containerColor = cardBackground),
+            elevation = CardDefaults.cardElevation(defaultElevation = cardElevation),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 18.dp)
+                .graphicsLayer {
+                    scaleX = pressScale
+                    scaleY = pressScale
+                }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) { onCardClick(event) }
+                .testTag("class_card_${event.id}")
         ) {
-            val chipBg = if (isOngoing) {
-                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
-            } else {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-            }
-            val chipTextColor = if (isOngoing) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.primary
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .width(68.dp)
-                        .padding(top = 1.dp)
-                ) {
-                    Text(
-                        text = startStr,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = contentPrimaryColor,
-                        textDecoration = if (isCancelled) TextDecoration.LineThrough else TextDecoration.None
-                    )
-                    Text(
-                        text = endStr,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = contentSecondaryColor
-                    )
+                val chipBg = if (isOngoing) {
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
+                } else {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                }
+                val chipTextColor = if (isOngoing) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.primary
                 }
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 10.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(11.dp))
-                            .background(chipBg)
-                            .padding(horizontal = 11.dp, vertical = 4.dp)
-                    ) {
+                    Column(modifier = Modifier.width(68.dp)) {
                         Text(
-                            text = if (isCancelled) "Отменено" else event.displayLessonType,
-                            fontSize = 11.sp,
+                            text = startStr,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isCancelled) MaterialTheme.colorScheme.error else chipTextColor
+                            color = contentPrimaryColor,
+                            textDecoration = if (isCancelled) TextDecoration.LineThrough else TextDecoration.None
+                        )
+                        Text(
+                            text = endStr,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = contentSecondaryColor
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(9.dp))
-
-                    Text(
-                        text = event.title,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = contentPrimaryColor,
-                        lineHeight = 21.sp,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(modifier = Modifier.height(9.dp))
-
-                    val teacher = event.displaySubgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() }
-                        ?: event.teacher
-                    if (teacher.isNotBlank()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Outlined.Person,
-                                contentDescription = null,
-                                tint = contentSecondaryColor,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(11.dp))
+                                .background(chipBg)
+                                .padding(horizontal = 11.dp, vertical = 4.dp)
+                        ) {
                             Text(
-                                text = teacher,
-                                fontSize = 13.sp,
-                                color = contentSecondaryColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                text = if (isCancelled) "Отменено" else event.displayLessonType,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isCancelled) MaterialTheme.colorScheme.error else chipTextColor
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(9.dp))
+
+                        Text(
+                            text = event.title,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = contentPrimaryColor,
+                            lineHeight = 21.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Spacer(modifier = Modifier.height(9.dp))
+
+                        val teacher = event.displaySubgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() }
+                            ?: event.teacher
+                        if (teacher.isNotBlank()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Person,
+                                    contentDescription = null,
+                                    tint = contentSecondaryColor,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = teacher,
+                                    fontSize = 13.sp,
+                                    color = contentSecondaryColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        if (isCancelled) {
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Занятие отменено",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }
 
-                    if (isCancelled) {
-                        Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.width(78.dp))
+                }
+
+                if (isOngoing) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    val remainingMin = event.getRemainingMinutes(liveTimeMillis)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.onPrimary)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Занятие отменено",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.error
+                            text = "СЕЙЧАС ИДЁТ",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "осталось $remainingMin мин",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                         )
                     }
-                }
 
-                val room = event.displaySubgroups.firstOrNull()?.room?.takeIf { it.isNotBlank() }
-                    ?: event.location
-                if (room.isNotBlank()) {
-
-                }
-            }
-
-            // Bottom Section: Ongoing wave progress OR Upcoming countdown
-            if (isOngoing) {
-                Spacer(modifier = Modifier.height(14.dp))
-                val remainingMin = event.getRemainingMinutes(liveTimeMillis)
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onPrimary)
+                    val targetProgress = event.getProgress(liveTimeMillis)
+                    val animatedProgress by animateFloatAsState(
+                        targetValue = targetProgress,
+                        animationSpec = tween(durationMillis = 950),
+                        label = "lesson_progress"
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    SquigglyProgressBar(
+                        progress = animatedProgress,
+                        activeColor = MaterialTheme.colorScheme.onPrimary,
+                        trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.28f),
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                } else if (isUpcomingSoon) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    val minutesUntil = event.getMinutesUntilStart(liveTimeMillis)
+                    val timeUntilText = if (minutesUntil >= 60) {
+                        val hours = minutesUntil / 60
+                        val mins = minutesUntil % 60
+                        if (mins > 0) "через $hours ч $mins мин" else "через $hours ч"
+                    } else {
+                        "через $minutesUntil мин"
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Schedule,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Начнётся $timeUntilText",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                } else if (isCompleted) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "СЕЙЧАС ИДЁТ",
+                        text = "Завершено",
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "осталось $remainingMin мин",
-                        fontSize = 13.sp,
                         fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                        color = contentSecondaryColor
                     )
                 }
+            }
+        }
 
-                // Smoothly animate the real progress between one-second clock updates.
-                val targetProgress = event.getProgress(liveTimeMillis)
-                val animatedProgress by animateFloatAsState(
-                    targetValue = targetProgress,
-                    animationSpec = tween(durationMillis = 950),
-                    label = "lesson_progress"
-                )
+        if (room.isNotBlank()) {
+            GearCluster(
+                isOngoing = isOngoing,
+                largeColor = if (isOngoing) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
+                else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                smallColor = if (isOngoing) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.48f)
+                else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.82f),
+                cardColor = cardBackground,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 22.dp, y = 18.dp)
+                    .size(width = 116.dp, height = 118.dp)
+            )
 
-                SquigglyProgressBar(
-                    progress = animatedProgress,
-                    activeColor = MaterialTheme.colorScheme.onPrimary,
-                    trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.28f),
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            } else if (isUpcomingSoon) {
-                Spacer(modifier = Modifier.height(12.dp))
-                val minutesUntil = event.getMinutesUntilStart(liveTimeMillis)
-                val timeUntilText = if (minutesUntil >= 60) {
-                    val hours = minutesUntil / 60
-                    val mins = minutesUntil % 60
-                    if (mins > 0) "через $hours ч $mins мин" else "через $hours ч"
-                } else {
-                    "через $minutesUntil мин"
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 2.dp)
-                ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(y = 18.dp)
+                    .size(width = 92.dp, height = 118.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
-                        imageVector = Icons.Outlined.Schedule,
+                        imageVector = Icons.Outlined.MeetingRoom,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        tint = contentSecondaryColor,
+                        modifier = Modifier.size(19.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "Начнётся $timeUntilText",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
+                        text = roomText,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = contentPrimaryColor,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-            } else if (isCompleted) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Завершено",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = contentSecondaryColor
-                )
-            }
-        }
-
-
-        GearCluster(
-            isOngoing = isOngoing,
-            largeColor = if (isOngoing) {
-                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
-            } else {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-            },
-            smallColor = if (isOngoing) {
-                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.48f)
-            } else {
-                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.82f)
-            },
-            cardColor = cardBackground,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 20.dp, y = 18.dp)
-                .size(width = 112.dp, height = 118.dp)
-        )
-
-        val roomText = room.replace("Кабинет ", "").replace("каб. ", "")
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 0.dp, y = 18.dp)
-                .size(width = 104.dp, height = 118.dp)
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = Icons.Outlined.MeetingRoom,
-                    contentDescription = null,
-                    tint = contentSecondaryColor,
-                    modifier = Modifier.size(19.dp)
-                )
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(
-                    text = roomText,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = contentPrimaryColor,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
         }
     }
-    }
-}
 }
