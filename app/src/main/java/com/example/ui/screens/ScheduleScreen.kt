@@ -170,15 +170,6 @@ fun ScheduleScreen(
             ExpressiveBottomBar(
                 currentTab = uiState.currentTab,
                 changesCount = allChanges.size,
-                showCancelledClasses = uiState.showCancelledClasses,
-                onToggleCancelled = {
-                    val wasAtTop = classListState.firstVisibleItemIndex == 0 &&
-                        classListState.firstVisibleItemScrollOffset < 12
-                    viewModel.setShowCancelledClasses(!uiState.showCancelledClasses)
-                    if (wasAtTop) {
-                        scheduleScope.launch { classListState.scrollToItem(0) }
-                    }
-                },
                 onTabSelected = { viewModel.selectTab(it) }
             )
         }
@@ -257,27 +248,72 @@ fun ScheduleScreen(
                                 )
                             }
 
-                            // Circular avatar container on the right
+                            // Compact cancelled-classes toggle.
+                            val cancelledToggleColor by animateColorAsState(
+                                targetValue = if (uiState.showCancelledClasses) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainerHighest
+                                },
+                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f),
+                                label = "cancelled_toggle_color"
+                            )
+                            val cancelledToggleScale by animateFloatAsState(
+                                targetValue = if (uiState.showCancelledClasses) 1f else 0.88f,
+                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 500f),
+                                label = "cancelled_toggle_scale"
+                            )
+                            val cancelledToggleRotation by animateFloatAsState(
+                                targetValue = if (uiState.showCancelledClasses) 0f else -14f,
+                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 460f),
+                                label = "cancelled_toggle_rotation"
+                            )
+
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
                                     .size(44.dp)
+                                    .graphicsLayer {
+                                        scaleX = cancelledToggleScale
+                                        scaleY = cancelledToggleScale
+                                        rotationZ = cancelledToggleRotation
+                                    }
                                     .clip(RoundedCornerShape(15.dp))
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                                    .clickable { viewModel.selectTab(BottomNavTab.PROFILE) }
+                                    .background(cancelledToggleColor)
+                                    .clickable {
+                                        val wasAtTop = classListState.firstVisibleItemIndex == 0 &&
+                                            classListState.firstVisibleItemScrollOffset < 12
+                                        viewModel.setShowCancelledClasses(!uiState.showCancelledClasses)
+                                        if (wasAtTop) {
+                                            scheduleScope.launch { classListState.scrollToItem(0) }
+                                        }
+                                    }
                             ) {
                                 if (uiState.isSyncing) {
                                     CircularProgressIndicator(
-                                        modifier = Modifier.size(22.dp),
+                                        modifier = Modifier.size(21.dp),
                                         color = MaterialTheme.colorScheme.primary,
                                         strokeWidth = 2.5.dp
                                     )
                                 } else {
                                     Icon(
-                                        imageVector = Icons.Outlined.Groups,
-                                        contentDescription = "Группа",
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(23.dp)
+                                        imageVector = Icons.Outlined.EventBusy,
+                                        contentDescription = if (uiState.showCancelledClasses) {
+                                            "Скрыть отменённые занятия"
+                                        } else {
+                                            "Показать отменённые занятия"
+                                        },
+                                        tint = if (uiState.showCancelledClasses) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                            .graphicsLayer {
+                                                scaleX = 1.06f
+                                                scaleY = 1.06f
+                                            }
                                     )
                                 }
                             }
