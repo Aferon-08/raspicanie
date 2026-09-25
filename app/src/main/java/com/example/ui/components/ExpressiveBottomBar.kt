@@ -12,8 +12,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.EventBusy
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.EventBusy
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,10 +43,10 @@ fun ExpressiveBottomBar(
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
-        Triple(BottomNavTab.SCHEDULE, "📅", "Расписание"),
-        Triple(BottomNavTab.PASSES, "🚫", "Пропуски"),
-        Triple(BottomNavTab.NOTES, "📝", "Заметки"),
-        Triple(BottomNavTab.PROFILE, "👤", "Профиль")
+        Triple(BottomNavTab.SCHEDULE, Icons.Outlined.CalendarMonth, Icons.Filled.CalendarMonth),
+        Triple(BottomNavTab.PASSES, Icons.Outlined.EventBusy, Icons.Filled.EventBusy),
+        Triple(BottomNavTab.NOTES, Icons.Outlined.EditNote, Icons.Filled.EditNote),
+        Triple(BottomNavTab.PROFILE, Icons.Outlined.Person, Icons.Filled.Person)
     )
 
     Row(
@@ -52,7 +62,7 @@ fun ExpressiveBottomBar(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items.forEach { (tab, emoji, label) ->
+        items.forEach { (tab, outlinedIcon, filledIcon) ->
             val selected = currentTab == tab
 
             val containerColor by animateColorAsState(
@@ -65,16 +75,20 @@ fun ExpressiveBottomBar(
                 label = "nav_container"
             )
 
+            val contentColor by animateColorAsState(
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f),
+                label = "nav_content"
+            )
+
             val itemScale by animateFloatAsState(
                 targetValue = if (selected) 1.08f else 0.94f,
                 animationSpec = spring(dampingRatio = 0.62f, stiffness = 480f),
                 label = "nav_scale"
-            )
-
-            val itemRotation by animateFloatAsState(
-                targetValue = if (selected) 0f else 0f,
-                animationSpec = spring(dampingRatio = 0.58f, stiffness = 520f),
-                label = "nav_rotation"
             )
 
             Box(
@@ -83,7 +97,6 @@ fun ExpressiveBottomBar(
                     .graphicsLayer {
                         scaleX = itemScale
                         scaleY = itemScale
-                        rotationZ = itemRotation
                     }
                     .background(
                         color = containerColor,
@@ -103,17 +116,19 @@ fun ExpressiveBottomBar(
                             }
                         }
                     ) {
-                        Text(
-                            text = emoji,
-                            fontSize = 27.sp,
-                            lineHeight = 30.sp
+                        Icon(
+                            imageVector = if (selected) filledIcon else outlinedIcon,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(27.dp)
                         )
                     }
                 } else {
-                    Text(
-                        text = emoji,
-                        fontSize = 27.sp,
-                        lineHeight = 30.sp
+                    Icon(
+                        imageVector = if (selected) filledIcon else outlinedIcon,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(27.dp)
                     )
                 }
             }
