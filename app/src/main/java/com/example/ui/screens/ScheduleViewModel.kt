@@ -75,7 +75,8 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             groupId = repository.groupId,
             customUrl = repository.customUrl,
             leadTimeMinutes = repository.leadTimeMinutes,
-            is24HourFormat = repository.is24HourFormat
+            is24HourFormat = repository.is24HourFormat,
+            reminderEventIds = repository.getEnabledReminderIds()
         )
     )
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
@@ -297,21 +298,20 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = _uiState.value.copy(syncFeedback = "Тестовое уведомление отправлено")
     }
 
-    fun setReminderForClass(event: ClassEvent) {
-        val leadTime = _uiState.value.leadTimeMinutes
-        notificationHelper.showClassNotification(
-            eventId = event.id,
-            title = event.title,
-            startTimeMillis = event.startTimeMillis,
-            location = event.location,
-            teacher = event.teacher,
-            leadTimeMinutes = leadTime
-        )
+    fun toggleReminderForClass(event: ClassEvent) {
+        val enabled = repository.toggleReminder(event)
+        val updatedIds = _uiState.value.reminderEventIds.toMutableSet().apply {
+            if (enabled) add(event.id) else remove(event.id)
+        }
         _uiState.value = _uiState.value.copy(
-            syncFeedback = "Уведомление для «${event.title}» активировано за $leadTime мин"
+            reminderEventIds = updatedIds,
+            syncFeedback = if (enabled) {
+                "Напоминание для «" + event.title + "» включено за 5 минут до начала"
+            } else {
+                "Напоминание для «" + event.title + "» отключено"
+            }
         )
     }
-
     fun clearChanges() {
         viewModelScope.launch {
             repository.clearChangeLog()
