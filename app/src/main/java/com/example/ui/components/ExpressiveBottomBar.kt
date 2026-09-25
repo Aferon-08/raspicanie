@@ -85,11 +85,6 @@ fun ExpressiveBottomBar(
                 animationSpec = spring(),
                 label = "nav_content"
             )
-            val itemWidth by animateDpAsState(
-                targetValue = if (selected) 92.dp else 56.dp,
-                animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
-                label = "nav_width"
-            )
             val itemScale by animateFloatAsState(
                 targetValue = if (selected) 1.04f else 0.94f,
                 animationSpec = spring(dampingRatio = 0.82f, stiffness = 550f),
