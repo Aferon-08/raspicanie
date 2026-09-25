@@ -78,7 +78,7 @@ fun ClassDetailDialog(
             ClassStatus.ONGOING -> MaterialTheme.colorScheme.primary
             ClassStatus.CANCELLED -> MaterialTheme.colorScheme.error
             ClassStatus.COMPLETED -> MaterialTheme.colorScheme.onSurfaceVariant
-            ClassStatus.UPCOMING -> MaterialTheme.colorScheme.secondary
+            ClassStatus.UPCOMING_SOON, ClassStatus.SCHEDULED -> MaterialTheme.colorScheme.secondary
         },
         animationSpec = spring(),
         label = "detail_status_color"
@@ -87,7 +87,8 @@ fun ClassDetailDialog(
         ClassStatus.ONGOING -> "Сейчас идёт"
         ClassStatus.CANCELLED -> "Отменено"
         ClassStatus.COMPLETED -> "Завершено"
-        ClassStatus.UPCOMING -> "Предстоит"
+        ClassStatus.UPCOMING_SOON -> "Скоро начнётся"
+        ClassStatus.SCHEDULED -> "Предстоит"
     }
 
     val startStr = ScheduleTimeFormatter.formatTime(event.startTimeMillis, is24HourFormat)
