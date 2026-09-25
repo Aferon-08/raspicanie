@@ -187,7 +187,7 @@ private fun GearCluster(
             teeth = 10,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 4.dp, y = 108.dp)
+                .offset(x = 28.dp, y = 92.dp)
         )
     }
 }
@@ -495,7 +495,7 @@ fun ClassCard(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(start = 12.dp)
+                    modifier = Modifier.padding(start = 0.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.MeetingRoom,
