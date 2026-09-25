@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,7 +62,8 @@ fun ClassDetailDialog(
     currentTimeMillis: Long = System.currentTimeMillis(),
     is24HourFormat: Boolean = true,
     onDismiss: () -> Unit,
-    onSetReminder: (ClassEvent) -> Unit
+    reminderEnabled: Boolean = false,
+    onToggleReminder: (ClassEvent) -> Unit
 ) {
     var liveTimeMillis by remember(event.id) { mutableLongStateOf(currentTimeMillis) }
 
@@ -235,17 +237,32 @@ fun ClassDetailDialog(
             if (status != ClassStatus.COMPLETED && status != ClassStatus.CANCELLED) {
                 Button(
                     onClick = {
-                        onSetReminder(event)
+                        onToggleReminder(event)
                         onDismiss()
+                    },
+                    colors = if (reminderEnabled) {
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    } else {
+                        ButtonDefaults.buttonColors()
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Notifications,
+                        imageVector = if (reminderEnabled) {
+                            Icons.Outlined.NotificationsOff
+                        } else {
+                            Icons.Outlined.Notifications
+                        },
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Напомнить", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (reminderEnabled) "Отключить напоминание" else "Напомнить за 5 минут",
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         },
