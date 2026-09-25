@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -91,6 +93,8 @@ fun ExpressiveBottomBar(
                 label = "nav_scale"
             )
 
+            val interactionSource = remember { MutableInteractionSource() }
+
             Box(
                 modifier = Modifier
                     .size(58.dp)
@@ -102,7 +106,11 @@ fun ExpressiveBottomBar(
                         color = containerColor,
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(17.dp)
                     )
-                    .clickable { onTabSelected(tab) },
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = { onTabSelected(tab) }
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (tab == BottomNavTab.PASSES && changesCount > 0) {
