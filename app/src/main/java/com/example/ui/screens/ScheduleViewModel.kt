@@ -58,6 +58,7 @@ data class ScheduleUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val is24HourFormat: Boolean = true,
+    val debugAnimationMode: Boolean = false,
     val notes: Map<String, String> = emptyMap(),
     val missedClasses: Set<String> = emptySet()
 )
@@ -204,6 +205,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun set24HourFormat(enabled: Boolean) {
         repository.is24HourFormat = enabled
         _uiState.value = _uiState.value.copy(is24HourFormat = enabled)
+    }
+
+    fun setDebugAnimationMode(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(debugAnimationMode = enabled)
     }
 
     fun setGroupTitle(title: String) {
