@@ -75,6 +75,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.model.ClassEvent
 import com.example.ui.components.ClassCard
 import com.example.ui.components.ClassDetailDialog
+import com.example.ui.components.ExpressiveBottomBar
 import com.example.ui.components.DaySelectorStrip
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -156,92 +157,11 @@ fun ScheduleScreen(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.navigationBarsPadding(),
-                tonalElevation = 4.dp
-            ) {
-                // Tab 1: Расписание
-                NavigationBarItem(
-                    selected = uiState.currentTab == BottomNavTab.SCHEDULE,
-                    onClick = { viewModel.selectTab(BottomNavTab.SCHEDULE) },
-                    icon = {
-                        Icon(
-                            imageVector = if (uiState.currentTab == BottomNavTab.SCHEDULE) Icons.Filled.CalendarMonth else Icons.Outlined.CalendarMonth,
-                            contentDescription = "Расписание"
-                        )
-                    },
-                    label = { Text("Расписание", maxLines = 1, softWrap = false, fontSize = 11.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        selectedTextColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-
-                // Tab 2: Пропуски
-                NavigationBarItem(
-                    selected = uiState.currentTab == BottomNavTab.PASSES,
-                    onClick = { viewModel.selectTab(BottomNavTab.PASSES) },
-                    icon = {
-                        if (allChanges.isNotEmpty()) {
-                            BadgedBox(badge = { Badge { Text("${allChanges.size}") } }) {
-                                Icon(
-                                    imageVector = if (uiState.currentTab == BottomNavTab.PASSES) Icons.Filled.EventBusy else Icons.Outlined.EventBusy,
-                                    contentDescription = "Пропуски"
-                                )
-                            }
-                        } else {
-                            Icon(
-                                imageVector = if (uiState.currentTab == BottomNavTab.PASSES) Icons.Filled.EventBusy else Icons.Outlined.EventBusy,
-                                contentDescription = "Пропуски"
-                            )
-                        }
-                    },
-                    label = { Text("Пропуски", maxLines = 1, softWrap = false, fontSize = 11.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        selectedTextColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-
-                // Tab 3: Заметки
-                NavigationBarItem(
-                    selected = uiState.currentTab == BottomNavTab.NOTES,
-                    onClick = { viewModel.selectTab(BottomNavTab.NOTES) },
-                    icon = {
-                        Icon(
-                            imageVector = if (uiState.currentTab == BottomNavTab.NOTES) Icons.Filled.EditNote else Icons.Outlined.EditNote,
-                            contentDescription = "Заметки"
-                        )
-                    },
-                    label = { Text("Заметки", maxLines = 1, softWrap = false, fontSize = 11.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        selectedTextColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-
-                // Tab 4: Профиль
-                NavigationBarItem(
-                    selected = uiState.currentTab == BottomNavTab.PROFILE,
-                    onClick = { viewModel.selectTab(BottomNavTab.PROFILE) },
-                    icon = {
-                        Icon(
-                            imageVector = if (uiState.currentTab == BottomNavTab.PROFILE) Icons.Filled.Person else Icons.Outlined.Person,
-                            contentDescription = "Профиль"
-                        )
-                    },
-                    label = { Text("Профиль", maxLines = 1, softWrap = false, fontSize = 11.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        selectedTextColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-            }
+            ExpressiveBottomBar(
+                currentTab = uiState.currentTab,
+                changesCount = allChanges.size,
+                onTabSelected = { viewModel.selectTab(it) }
+            )
         }
     ) { innerPadding ->
         AnimatedContent(
@@ -305,7 +225,7 @@ fun ScheduleScreen(
                             ) {
                                 Text(
                                     text = "Расписание",
-                                    fontSize = 30.sp,
+                                    fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -322,9 +242,9 @@ fun ScheduleScreen(
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    .size(52.dp)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
                                     .clickable { viewModel.selectTab(BottomNavTab.PROFILE) }
                             ) {
                                 if (uiState.isSyncing) {
@@ -337,8 +257,8 @@ fun ScheduleScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Groups,
                                         contentDescription = "Группа",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(26.dp)
                                     )
                                 }
                             }
