@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -60,35 +59,36 @@ fun SquigglyProgressBar(
         val amplitude = 3.5.dp.toPx()
         val strokeWidth = 3.dp.toPx()
 
-        if (activeWidth > 0f) {
-            val path = Path()
-            val step = 2.dp.toPx().coerceAtLeast(1f)
+        val step = 2.dp.toPx().coerceAtLeast(1f)
 
-            var x = 0f
+        fun wavePath(endX: Float): Path {
+            val path = Path()
             path.moveTo(0f, midY)
 
-            while (x <= activeWidth) {
+            var x = 0f
+            while (x <= endX) {
                 val y = midY + amplitude * sin(
                     ((x / wavelength) * 2f * PI.toFloat()) + phase
                 )
                 path.lineTo(x, y)
                 x += step
             }
-
-            drawPath(
-                path = path,
-                color = activeColor,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-            )
+            return path
         }
 
-        if (activeWidth < totalWidth) {
-            drawLine(
-                color = trackColor,
-                start = Offset(activeWidth.coerceAtLeast(0f), midY),
-                end = Offset(totalWidth, midY),
-                strokeWidth = strokeWidth,
-                cap = StrokeCap.Round
+        // The track is wavy as well, so the whole indicator has the same
+        // expressive motion rather than switching to a straight line.
+        drawPath(
+            path = wavePath(totalWidth),
+            color = trackColor,
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+        )
+
+        if (activeWidth > 0f) {
+            drawPath(
+                path = wavePath(activeWidth),
+                color = activeColor,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
             )
         }
     }
