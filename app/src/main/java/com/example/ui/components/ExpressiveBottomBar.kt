@@ -2,29 +2,29 @@ package com.example.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.EditNote
-import androidx.compose.material.icons.outlined.EventBusy
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.EventBusy
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -39,12 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.screens.BottomNavTab
 
-/**
- * Compact expressive navigation surface.
- *
- * The selected item grows into a pill while the icon and label gently
- * transition colours. This keeps the navigation visually quiet but alive.
- */
 @Composable
 fun ExpressiveBottomBar(
     currentTab: BottomNavTab,
@@ -75,23 +69,31 @@ fun ExpressiveBottomBar(
         items.forEach { (tab, label, icons) ->
             val selected = currentTab == tab
             val containerColor by animateColorAsState(
-                targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainer
+                },
                 animationSpec = spring(),
                 label = "nav_container"
             )
             val contentColor by animateColorAsState(
-                targetValue = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 animationSpec = spring(),
                 label = "nav_content"
             )
             val itemWidth by animateDpAsState(
                 targetValue = if (selected) 122.dp else 50.dp,
-                animationSpec = spring(dampingRatio = 0.78f, stiffness = 500f),
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
                 label = "nav_width"
             )
             val itemScale by animateFloatAsState(
                 targetValue = if (selected) 1f else 0.96f,
-                animationSpec = spring(dampingRatio = 0.8f, stiffness = 550f),
+                animationSpec = spring(dampingRatio = 0.82f, stiffness = 550f),
                 label = "nav_scale"
             )
 
@@ -104,39 +106,44 @@ fun ExpressiveBottomBar(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Column(
+                Row(
                     modifier = Modifier
+                        .background(containerColor, RoundedCornerShape(19.dp))
                         .clickable { onTabSelected(tab) }
-                        .background(containerColor, RoundedCornerShape(24.dp))
                         .padding(horizontal = 10.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Center,\n                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (tab == BottomNavTab.PASSES && changesCount > 0) {
-                            BadgedBox(badge = { Badge { Text(changesCount.toString(), fontSize = 8.sp) } }) {
-                                Icon(
-                                    imageVector = if (selected) icons.second else icons.first,
-                                    contentDescription = label,
-                                    tint = contentColor,
-                                    modifier = Modifier.size(21.dp)
-                                )
-                            }
-                        } else {
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (tab == BottomNavTab.PASSES && changesCount > 0) {
+                        BadgedBox(
+                            badge = { Badge { Text(changesCount.toString(), fontSize = 8.sp) } }
+                        ) {
                             Icon(
                                 imageVector = if (selected) icons.second else icons.first,
                                 contentDescription = label,
                                 tint = contentColor,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(21.dp)
                             )
                         }
+                    } else {
+                        Icon(
+                            imageVector = if (selected) icons.second else icons.first,
+                            contentDescription = label,
+                            tint = contentColor,
+                            modifier = Modifier.size(21.dp)
+                        )
+                    }
 
-                        if (selected) {
-                            Text(
-                                text = label,
-                                color = contentColor,
-                                fontSize = 11.sp,
-                                lineHeight = 13.sp
-                            )
-                        }
+                    if (selected) {
+                        Spacer(modifier = Modifier.width(7.dp))
+                        Text(
+                            text = label,
+                            color = contentColor,
+                            fontSize = 12.sp,
+                            lineHeight = 14.sp,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }
