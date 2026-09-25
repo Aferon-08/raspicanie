@@ -207,6 +207,7 @@ fun ScheduleScreen(
                         onSetThemeMode = { viewModel.setThemeMode(it) },
                         onSetDynamicColor = { viewModel.setDynamicColor(it) },
                         onSet24HourFormat = { viewModel.set24HourFormat(it) },
+                        onSetDebugAnimationMode = { viewModel.setDebugAnimationMode(it) },
                         onTriggerTestNotification = {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -429,6 +430,7 @@ fun ScheduleScreen(
                                             ClassCard(
                                                 event = event,
                                                 is24HourFormat = uiState.is24HourFormat,
+                                                forceOngoingAnimation = uiState.debugAnimationMode,
                                                 onCardClick = { selectedEventForDetail = it }
                                             )
                                         }

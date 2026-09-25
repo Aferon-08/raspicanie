@@ -57,6 +57,7 @@ fun ProfileScreen(
     onSetThemeMode: (ThemeMode) -> Unit,
     onSetDynamicColor: (Boolean) -> Unit,
     onSet24HourFormat: (Boolean) -> Unit,
+    onSetDebugAnimationMode: (Boolean) -> Unit,
     onTriggerTestNotification: () -> Unit,
     onSimulateChange: () -> Unit,
     onRefresh: () -> Unit,
@@ -401,6 +402,21 @@ fun ProfileScreen(
                         ) {
                             Text("Тест переноса")
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedButton(
+                        onClick = { onSetDebugAnimationMode(!uiState.debugAnimationMode) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            if (uiState.debugAnimationMode) {
+                                "Остановить анимацию карточек"
+                            } else {
+                                "Запустить отладочную анимацию карточек"
+                            }
+                        )
                     }
                 }
             }

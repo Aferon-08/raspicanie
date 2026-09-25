@@ -8,25 +8,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.EventBusy
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.EditNote
-import androidx.compose.material.icons.outlined.EventBusy
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,96 +33,87 @@ fun ExpressiveBottomBar(
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
-        Triple(BottomNavTab.SCHEDULE, "Расписание", Icons.Outlined.CalendarMonth to Icons.Filled.CalendarMonth),
-        Triple(BottomNavTab.PASSES, "Пропуски", Icons.Outlined.EventBusy to Icons.Filled.EventBusy),
-        Triple(BottomNavTab.NOTES, "Заметки", Icons.Outlined.EditNote to Icons.Filled.EditNote),
-        Triple(BottomNavTab.PROFILE, "Профиль", Icons.Outlined.Person to Icons.Filled.Person)
+        Triple(BottomNavTab.SCHEDULE, "📅", "Расписание"),
+        Triple(BottomNavTab.PASSES, "🚫", "Пропуски"),
+        Triple(BottomNavTab.NOTES, "📝", "Заметки"),
+        Triple(BottomNavTab.PROFILE, "👤", "Профиль")
     )
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 14.dp, vertical = 7.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
             .background(
                 MaterialTheme.colorScheme.surfaceContainer,
-                RoundedCornerShape(24.dp)
+                androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
             )
-            .padding(horizontal = 5.dp, vertical = 5.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items.forEach { (tab, label, icons) ->
+        items.forEach { (tab, emoji, label) ->
             val selected = currentTab == tab
+
             val containerColor by animateColorAsState(
                 targetValue = if (selected) {
                     MaterialTheme.colorScheme.primaryContainer
                 } else {
                     MaterialTheme.colorScheme.surfaceContainer
                 },
-                animationSpec = spring(),
+                animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f),
                 label = "nav_container"
             )
-            val contentColor by animateColorAsState(
-                targetValue = if (selected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                animationSpec = spring(),
-                label = "nav_content"
-            )
+
             val itemScale by animateFloatAsState(
-                targetValue = if (selected) 1.04f else 0.94f,
-                animationSpec = spring(dampingRatio = 0.82f, stiffness = 550f),
+                targetValue = if (selected) 1.08f else 0.94f,
+                animationSpec = spring(dampingRatio = 0.62f, stiffness = 480f),
                 label = "nav_scale"
+            )
+
+            val itemRotation by animateFloatAsState(
+                targetValue = if (selected) 0f else 0f,
+                animationSpec = spring(dampingRatio = 0.58f, stiffness = 520f),
+                label = "nav_rotation"
             )
 
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .size(58.dp)
                     .graphicsLayer {
                         scaleX = itemScale
                         scaleY = itemScale
-                    },
+                        rotationZ = itemRotation
+                    }
+                    .background(
+                        color = containerColor,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(17.dp)
+                    )
+                    .clickable { onTabSelected(tab) },
                 contentAlignment = Alignment.Center
             ) {
-                Row(
-                    modifier = Modifier
-                        .background(containerColor, RoundedCornerShape(19.dp))
-                        .clickable { onTabSelected(tab) }
-                        .padding(horizontal = 7.dp, vertical = 7.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (tab == BottomNavTab.PASSES && changesCount > 0) {
-                        BadgedBox(
-                            badge = { Badge { Text(changesCount.toString(), fontSize = 8.sp) } }
-                        ) {
-                            Icon(
-                                imageVector = if (selected) icons.second else icons.first,
-                                contentDescription = label,
-                                tint = contentColor,
-                                modifier = Modifier.size(21.dp)
-                            )
+                if (tab == BottomNavTab.PASSES && changesCount > 0) {
+                    BadgedBox(
+                        badge = {
+                            Badge {
+                                Text(
+                                    text = changesCount.toString(),
+                                    fontSize = 9.sp
+                                )
+                            }
                         }
-                    } else {
-                        Icon(
-                            imageVector = if (selected) icons.second else icons.first,
-                            contentDescription = label,
-                            tint = contentColor,
-                            modifier = Modifier.size(21.dp)
+                    ) {
+                        Text(
+                            text = emoji,
+                            fontSize = 27.sp,
+                            lineHeight = 30.sp
                         )
                     }
-
-                    Spacer(modifier = Modifier.width(5.dp))
+                } else {
                     Text(
-                        text = label,
-                        color = contentColor,
-                        fontSize = 10.sp,
-                        lineHeight = 12.sp,
-                        fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Medium,
-                        maxLines = 1
+                        text = emoji,
+                        fontSize = 27.sp,
+                        lineHeight = 30.sp
                     )
                 }
             }
