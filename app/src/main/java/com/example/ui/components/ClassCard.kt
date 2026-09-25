@@ -177,7 +177,7 @@ private fun GearCluster(
             teeth = 10,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 28.dp, y = 116.dp)
+                .offset(x = 28.dp, y = 96.dp)
         )
 
         // Большая шестерёнка рисуется поверх маленькой.
@@ -498,7 +498,8 @@ fun ClassCard(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.size(116.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.MeetingRoom,
@@ -514,7 +515,8 @@ fun ClassCard(
                         color = contentPrimaryColor,
                         textAlign = TextAlign.Center,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
