@@ -102,9 +102,8 @@ private class RoomBlobShape : Shape {
 private fun Gear(
     size: androidx.compose.ui.unit.Dp,
     color: Color,
-    holeColor: Color,
     rotation: Float,
-    teeth: Int = 10,
+    teeth: Int = 12,
     modifier: Modifier = Modifier
 ) {
     Canvas(
@@ -112,30 +111,30 @@ private fun Gear(
             .size(size)
             .graphicsLayer { rotationZ = rotation }
     ) {
-        val center = androidx.compose.ui.geometry.Offset(this.size.width / 2f, this.size.height / 2f)
-        val outer = this.size.minDimension * 0.48f
-        val root = outer * 0.72f
-        val inner = outer * 0.46f
+        val center = androidx.compose.ui.geometry.Offset(
+            this.size.width / 2f,
+            this.size.height / 2f
+        )
+        val outer = this.size.minDimension * 0.49f
+        val root = outer * 0.76f
         val path = Path()
         val pointsPerTooth = 4
+        val totalPoints = teeth * pointsPerTooth
 
-        for (i in 0 until teeth * pointsPerTooth) {
+        for (i in 0 until totalPoints) {
             val toothPhase = i % pointsPerTooth
-            val angle = (i.toFloat() / (teeth * pointsPerTooth)) * (2f * kotlin.math.PI).toFloat() - (kotlin.math.PI.toFloat() / 2f)
+            val angle =
+                (i.toFloat() / totalPoints) * (2f * kotlin.math.PI).toFloat() -
+                    (kotlin.math.PI.toFloat() / 2f)
             val radius = if (toothPhase == 1 || toothPhase == 2) outer else root
             val x = center.x + kotlin.math.cos(angle) * radius
             val y = center.y + kotlin.math.sin(angle) * radius
+
             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }
+
         path.close()
         drawPath(path = path, color = color)
-        drawCircle(color = holeColor, radius = inner, center = center)
-        drawCircle(
-            color = color.copy(alpha = 0.45f),
-            radius = inner * 0.42f,
-            center = center,
-            style = Stroke(width = this.size.minDimension * 0.045f)
-        )
     }
 }
 
@@ -144,10 +143,10 @@ private fun GearCluster(
     isOngoing: Boolean,
     largeColor: Color,
     smallColor: Color,
-    cardColor: Color,
     modifier: Modifier = Modifier
 ) {
     val transition = rememberInfiniteTransition(label = "gear_rotation")
+
     val largeRotation by transition.animateFloat(
         initialValue = 0f,
         targetValue = if (isOngoing) 360f else 0f,
@@ -157,32 +156,38 @@ private fun GearCluster(
         ),
         label = "large_gear_rotation"
     )
+
     val smallRotation by transition.animateFloat(
         initialValue = 0f,
         targetValue = if (isOngoing) -360f else 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(4200, easing = LinearEasing),
+            animation = tween(4000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "small_gear_rotation"
     )
 
     Box(modifier = modifier) {
+        // Большая шестерёнка — основная, кабинет будет расположен прямо в её центре.
         Gear(
-            size = 92.dp,
+            size = 154.dp,
             color = largeColor,
-            holeColor = cardColor,
             rotation = largeRotation,
-            teeth = 11,
-            modifier = Modifier.align(Alignment.Center).offset(x = 17.dp, y = 3.dp)
+            teeth = 13,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 12.dp, y = 0.dp)
         )
+
+        // Маленькая шестерёнка находится ниже большой и частично перекрывается ею.
         Gear(
-            size = 50.dp,
+            size = 82.dp,
             color = smallColor,
-            holeColor = cardColor,
             rotation = smallRotation,
-            teeth = 9,
-            modifier = Modifier.align(Alignment.TopEnd).offset(x = 8.dp, y = 8.dp)
+            teeth = 10,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 4.dp, y = 108.dp)
         )
     }
 }
@@ -255,17 +260,21 @@ fun ClassCard(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Box(modifier = modifier.fillMaxWidth()) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .clip(RoundedCornerShape(30.dp))
+    ) {
         Card(
             shape = RoundedCornerShape(30.dp),
             colors = CardDefaults.cardColors(containerColor = cardBackground),
             elevation = CardDefaults.cardElevation(defaultElevation = cardElevation),
             modifier = Modifier
                 .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = pressScale
-                    scaleY = pressScale
-                }
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null
@@ -460,25 +469,34 @@ fun ClassCard(
         if (room.isNotBlank()) {
             GearCluster(
                 isOngoing = isOngoing,
-                largeColor = if (isOngoing) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
-                else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                smallColor = if (isOngoing) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.48f)
-                else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.82f),
-                cardColor = cardBackground,
+                largeColor = if (isOngoing) {
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
+                } else {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                },
+                smallColor = if (isOngoing) {
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.42f)
+                } else {
+                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.78f)
+                },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 22.dp, y = 18.dp)
-                    .size(width = 116.dp, height = 118.dp)
+                    .offset(x = 12.dp, y = 8.dp)
+                    .size(width = 168.dp, height = 198.dp)
             )
 
+            // Кабинет расположен внутри большой шестерёнки и не вращается вместе с ней.
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(y = 18.dp)
-                    .size(width = 92.dp, height = 118.dp)
+                    .offset(x = 10.dp, y = 10.dp)
+                    .size(154.dp)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(start = 12.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.MeetingRoom,
                         contentDescription = null,
@@ -488,7 +506,7 @@ fun ClassCard(
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = roomText,
-                        fontSize = 28.sp,
+                        fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         color = contentPrimaryColor,
                         maxLines = 2,
