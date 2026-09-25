@@ -237,20 +237,24 @@ class ScheduleRepository(
 
     suspend fun rescheduleUpcomingNotifications() {
         try {
-            // Cancel older or lingering alarms to free up system AlarmManager slots
+            // Refresh only alarms explicitly enabled by the user.
+            // The enabled state survives schedule synchronization and device reboot.
             val allEvents = database.scheduleDao().getAllEventsList().map { it.toDomain() }
-            notificationScheduler.cancelAll(allEvents)
-
-            val now = System.currentTimeMillis()
-            val maxHorizonMillis = now + (3L * 24 * 60 * 60 * 1000)
-            val upcoming = database.scheduleDao()
-                .getUpcomingEventsLimited(now, maxHorizonMillis, limit = 5)
-                .map { it.toDomain() }
-            notificationScheduler.rescheduleAll(upcoming, leadTimeMinutes)
+            notificationScheduler.cancelAlarms(allEvents)
+            notificationScheduler.rescheduleEnabled(allEvents)
         } catch (e: Exception) {
             Log.w("ScheduleRepository", "Failed to reschedule notifications", e)
         }
     }
+
+    fun getEnabledReminderIds(): Set<String> =
+        notificationScheduler.getEnabledReminderIds()
+
+    fun isReminderEnabled(eventId: String): Boolean =
+        notificationScheduler.isReminderEnabled(eventId)
+
+    fun toggleReminder(event: ClassEvent): Boolean =
+        notificationScheduler.toggleReminder(event)
 
     suspend fun clearChangeLog() {
         database.scheduleDao().clearChanges()
