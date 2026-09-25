@@ -22,6 +22,7 @@ object IcsParser {
         var currentSummary = ""
         var currentDescription = ""
         var currentLocation = ""
+        var currentUrl = ""
         var currentStatus = ""
         var startMillis: Long? = null
         var endMillis: Long? = null
@@ -34,6 +35,7 @@ object IcsParser {
                 currentSummary = ""
                 currentDescription = ""
                 currentLocation = ""
+                currentUrl = ""
                 currentStatus = ""
                 startMillis = null
                 endMillis = null
@@ -46,6 +48,12 @@ object IcsParser {
                     val cleanSummary = unescapeIcs(currentSummary).trim()
                     val cleanDesc = unescapeIcs(currentDescription).trim()
                     val cleanLoc = unescapeIcs(currentLocation).trim()
+                    val cleanUrl = unescapeIcs(currentUrl).trim()
+                    val finalDescription = if (cleanUrl.isNotBlank() && !cleanDesc.contains(cleanUrl)) {
+                        listOf(cleanDesc, "Ссылка: " + cleanUrl).filter { it.isNotBlank() }.joinToString("\n")
+                    } else {
+                        cleanDesc
+                    }
                     val isCancelled = currentStatus.equals("CANCELLED", ignoreCase = true) ||
                             cleanSummary.contains("отменен", ignoreCase = true) ||
                             cleanDesc.contains("отменен", ignoreCase = true)
@@ -57,7 +65,7 @@ object IcsParser {
                         ClassEvent(
                             id = finalUid,
                             title = extractedTitle.ifBlank { "Занятие" },
-                            description = cleanDesc,
+                            description = finalDescription,
                             teacher = extractedTeacher,
                             location = cleanLoc,
                             startTimeMillis = startMillis,
@@ -90,6 +98,7 @@ object IcsParser {
                 "SUMMARY" -> currentSummary = value
                 "DESCRIPTION" -> currentDescription = value
                 "LOCATION" -> currentLocation = value
+                "URL" -> currentUrl = value
                 "STATUS" -> currentStatus = value
                 "DTSTART" -> startMillis = parseIcsDateTime(keyPart, value)
                 "DTEND" -> endMillis = parseIcsDateTime(keyPart, value)
