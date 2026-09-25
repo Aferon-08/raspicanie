@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -168,7 +169,18 @@ private fun GearCluster(
     )
 
     Box(modifier = modifier) {
-        // Большая шестерёнка — основная, кабинет будет расположен прямо в её центре.
+        // Сначала рисуем маленькую шестерёнку: она находится ЗА большой.
+        Gear(
+            size = 82.dp,
+            color = smallColor,
+            rotation = smallRotation,
+            teeth = 10,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 28.dp, y = 116.dp)
+        )
+
+        // Большая шестерёнка рисуется поверх маленькой.
         Gear(
             size = 154.dp,
             color = largeColor,
@@ -178,19 +190,9 @@ private fun GearCluster(
                 .align(Alignment.TopEnd)
                 .offset(x = 12.dp, y = 0.dp)
         )
-
-        // Маленькая шестерёнка находится ниже большой и частично перекрывается ею.
-        Gear(
-            size = 82.dp,
-            color = smallColor,
-            rotation = smallRotation,
-            teeth = 10,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 28.dp, y = 92.dp)
-        )
     }
 }
+
 
 @Composable
 fun ClassCard(
@@ -486,16 +488,17 @@ fun ClassCard(
             )
 
             // Кабинет расположен внутри большой шестерёнки и не вращается вместе с ней.
+            // Отдельный слой поверх шестерёнки: его центр совпадает с центром большой шестерёнки.
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 10.dp, y = 10.dp)
+                    .offset(x = 10.dp, y = 0.dp)
                     .size(154.dp)
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(start = 0.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.MeetingRoom,
@@ -509,6 +512,7 @@ fun ClassCard(
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         color = contentPrimaryColor,
+                        textAlign = TextAlign.Center,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
