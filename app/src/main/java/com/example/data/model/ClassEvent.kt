@@ -50,7 +50,7 @@ data class ClassEvent(
     val displayLessonType: String
         get() {
             if (lessonType.isNotBlank()) return lessonType
-            val text = "$" + "title $" + "description $" + "rawSummary".lowercase()
+            val text = (title + " " + description + " " + rawSummary).lowercase()
             return when {
                 "лекци" in text -> "Лекция"
                 "лаб" in text -> "Лаб"
