@@ -374,46 +374,7 @@ fun ClassCard(
                 val room = event.displaySubgroups.firstOrNull()?.room?.takeIf { it.isNotBlank() }
                     ?: event.location
                 if (room.isNotBlank()) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(width = 104.dp, height = 118.dp)
-                    ) {
-                        GearCluster(
-                            isOngoing = isOngoing,
-                            largeColor = if (isOngoing) {
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
-                            } else {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                            },
-                            smallColor = if (isOngoing) {
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.48f)
-                            } else {
-                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.82f)
-                            },
-                            cardColor = cardBackground,
-                            modifier = Modifier.fillMaxWidth().height(118.dp)
-                        )
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(start = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.MeetingRoom,
-                                contentDescription = null,
-                                tint = contentSecondaryColor,
-                                modifier = Modifier.size(19.dp)
-                            )
-                            Spacer(modifier = Modifier.height(3.dp))
-                            Text(
-                                text = room.replace("Кабинет ", "").replace("каб. ", ""),
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = contentPrimaryColor,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
+
                 }
             }
 
@@ -499,6 +460,53 @@ fun ClassCard(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Normal,
                     color = contentSecondaryColor
+                )
+            }
+        }
+
+
+        GearCluster(
+            isOngoing = isOngoing,
+            largeColor = if (isOngoing) {
+                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
+            } else {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+            },
+            smallColor = if (isOngoing) {
+                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.48f)
+            } else {
+                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.82f)
+            },
+            cardColor = cardBackground,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 20.dp, y = 18.dp)
+                .size(width = 112.dp, height = 118.dp)
+        )
+
+        val roomText = room.replace("Кабинет ", "").replace("каб. ", "")
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 0.dp, y = 18.dp)
+                .size(width = 104.dp, height = 118.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Outlined.MeetingRoom,
+                    contentDescription = null,
+                    tint = contentSecondaryColor,
+                    modifier = Modifier.size(19.dp)
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = roomText,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = contentPrimaryColor,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
