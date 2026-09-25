@@ -449,9 +449,10 @@ fun ScheduleScreen(
         ClassDetailDialog(
             event = event,
             is24HourFormat = uiState.is24HourFormat,
+            reminderEnabled = event.id in uiState.reminderEventIds,
             onDismiss = { selectedEventForDetail = null },
-            onSetReminder = {
-                viewModel.setReminderForClass(it)
+            onToggleReminder = {
+                viewModel.toggleReminderForClass(it)
                 selectedEventForDetail = null
             }
         )
