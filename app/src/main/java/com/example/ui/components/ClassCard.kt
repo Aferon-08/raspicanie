@@ -199,6 +199,7 @@ fun ClassCard(
     event: ClassEvent,
     currentTimeMillis: Long = System.currentTimeMillis(),
     is24HourFormat: Boolean = true,
+    forceOngoingAnimation: Boolean = false,
     onCardClick: (ClassEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -213,7 +214,16 @@ fun ClassCard(
         }
     }
 
-    val status = event.getStatus(liveTimeMillis)
+    val animationTimeMillis = if (forceOngoingAnimation) {
+        event.startTimeMillis + ((event.endTimeMillis - event.startTimeMillis) / 2L)
+    } else {
+        liveTimeMillis
+    }
+    val status = if (forceOngoingAnimation) {
+        ClassStatus.ONGOING
+    } else {
+        event.getStatus(animationTimeMillis)
+    }
     val startStr = ScheduleTimeFormatter.formatTime(event.startTimeMillis, is24HourFormat)
     val endStr = ScheduleTimeFormatter.formatTime(event.endTimeMillis, is24HourFormat)
     val isOngoing = status == ClassStatus.ONGOING
