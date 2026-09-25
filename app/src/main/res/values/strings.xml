@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Planovo Расписание</string>
+    <string name="schedule_title">Расписание занятий</string>
+    <string name="current_class">Текущее занятие</string>
+    <string name="next_class">Следующее занятие</string>
+    <string name="no_classes_today">На этот день занятий нет</string>
+    <string name="refresh">Обновить</string>
+    <string name="settings">Настройки</string>
+    <string name="changes_log">Журнал изменений</string>
+    <string name="group_id_label">ID группы</string>
+    <string name="calendar_url_label">Ссылка на iCalendar (.ics)</string>
+    <string name="notification_lead_time">Уведомлять до начала</string>
+    <string name="notification_channel_name">Напоминания о занятиях</string>
+    <string name="notification_channel_desc">Уведомления о предстоящих уроках и изменениях в расписании</string>
+</resources>

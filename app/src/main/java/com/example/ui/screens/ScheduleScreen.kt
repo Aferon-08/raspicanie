@@ -1,0 +1,526 @@
+package com.example.ui.screens
+
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.EventBusy
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.EventBusy
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.data.model.ClassEvent
+import com.example.ui.components.ClassCard
+import com.example.ui.components.ClassDetailDialog
+import com.example.ui.components.DaySelectorStrip
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScheduleScreen(
+    viewModel: ScheduleViewModel = viewModel(),
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val dayEvents by viewModel.dayEvents.collectAsStateWithLifecycle()
+    val allChanges by viewModel.allChanges.collectAsStateWithLifecycle()
+    val classCounts by viewModel.classCountByDay.collectAsStateWithLifecycle()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    var selectedEventForDetail by remember { mutableStateOf<ClassEvent?>(null) }
+
+    // Android 13+ Notification permission
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.triggerTestNotification(uiState.leadTimeMinutes)
+        }
+    }
+
+    LaunchedEffect(uiState.syncFeedback) {
+        uiState.syncFeedback?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearSyncFeedback()
+        }
+    }
+
+    // Today / Tomorrow / Day Name calculation
+    val dayHeaderTitle = remember(uiState.selectedDateMillis) {
+        val todayStart = ScheduleViewModel.getTodayStartMillis()
+        val diffDays = ((uiState.selectedDateMillis - todayStart) / (24 * 60 * 60 * 1000)).toInt()
+        when (diffDays) {
+            0 -> "Сегодня"
+            1 -> "Завтра"
+            -1 -> "Вчера"
+            else -> {
+                val dow = com.example.util.ScheduleTimeFormatter.formatDate(uiState.selectedDateMillis, "EEEE")
+                dow.replaceFirstChar { it.titlecase(Locale("ru")) }
+            }
+        }
+    }
+
+    val dayHeaderSubtitle = remember(uiState.selectedDateMillis) {
+        com.example.util.ScheduleTimeFormatter.formatDate(uiState.selectedDateMillis, "EEEE, d MMMM")
+    }
+
+    val dayTimeSpan = remember(dayEvents, uiState.is24HourFormat) {
+        if (dayEvents.isEmpty()) "" else {
+            val first = dayEvents.minByOrNull { it.startTimeMillis }?.startTimeMillis
+            val last = dayEvents.maxByOrNull { it.endTimeMillis }?.endTimeMillis
+            if (first != null && last != null) {
+                "${com.example.util.ScheduleTimeFormatter.formatTime(first, uiState.is24HourFormat)}—${com.example.util.ScheduleTimeFormatter.formatTime(last, uiState.is24HourFormat)}"
+            } else ""
+        }
+    }
+
+    val pairsWord = remember(dayEvents.size) {
+        val count = dayEvents.size
+        when {
+            count % 10 == 1 && count % 100 != 11 -> "$count пара"
+            count % 10 in 2..4 && (count % 100 !in 12..14) -> "$count пары"
+            else -> "$count пар"
+        }
+    }
+
+    Scaffold(
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding(),
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.navigationBarsPadding(),
+                tonalElevation = 4.dp
+            ) {
+                // Tab 1: Расписание
+                NavigationBarItem(
+                    selected = uiState.currentTab == BottomNavTab.SCHEDULE,
+                    onClick = { viewModel.selectTab(BottomNavTab.SCHEDULE) },
+                    icon = {
+                        Icon(
+                            imageVector = if (uiState.currentTab == BottomNavTab.SCHEDULE) Icons.Filled.CalendarMonth else Icons.Outlined.CalendarMonth,
+                            contentDescription = "Расписание"
+                        )
+                    },
+                    label = { Text("Расписание") },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedTextColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+
+                // Tab 2: Пропуски
+                NavigationBarItem(
+                    selected = uiState.currentTab == BottomNavTab.PASSES,
+                    onClick = { viewModel.selectTab(BottomNavTab.PASSES) },
+                    icon = {
+                        if (allChanges.isNotEmpty()) {
+                            BadgedBox(badge = { Badge { Text("${allChanges.size}") } }) {
+                                Icon(
+                                    imageVector = if (uiState.currentTab == BottomNavTab.PASSES) Icons.Filled.EventBusy else Icons.Outlined.EventBusy,
+                                    contentDescription = "Пропуски"
+                                )
+                            }
+                        } else {
+                            Icon(
+                                imageVector = if (uiState.currentTab == BottomNavTab.PASSES) Icons.Filled.EventBusy else Icons.Outlined.EventBusy,
+                                contentDescription = "Пропуски"
+                            )
+                        }
+                    },
+                    label = { Text("Пропуски") },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedTextColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+
+                // Tab 3: Заметки
+                NavigationBarItem(
+                    selected = uiState.currentTab == BottomNavTab.NOTES,
+                    onClick = { viewModel.selectTab(BottomNavTab.NOTES) },
+                    icon = {
+                        Icon(
+                            imageVector = if (uiState.currentTab == BottomNavTab.NOTES) Icons.Filled.EditNote else Icons.Outlined.EditNote,
+                            contentDescription = "Заметки"
+                        )
+                    },
+                    label = { Text("Заметки") },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedTextColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+
+                // Tab 4: Профиль
+                NavigationBarItem(
+                    selected = uiState.currentTab == BottomNavTab.PROFILE,
+                    onClick = { viewModel.selectTab(BottomNavTab.PROFILE) },
+                    icon = {
+                        Icon(
+                            imageVector = if (uiState.currentTab == BottomNavTab.PROFILE) Icons.Filled.Person else Icons.Outlined.Person,
+                            contentDescription = "Профиль"
+                        )
+                    },
+                    label = { Text("Профиль") },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedTextColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+        }
+    ) { innerPadding ->
+        AnimatedContent(
+            targetState = uiState.currentTab,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "tab_content_transition",
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) { currentTab ->
+            when (currentTab) {
+                BottomNavTab.PASSES -> {
+                    PassesScreen(
+                        changes = allChanges,
+                        missedClassesCount = uiState.missedClasses.size,
+                        onClearChanges = { viewModel.clearChanges() },
+                        onSimulateChange = { viewModel.simulateChange() }
+                    )
+                }
+                BottomNavTab.NOTES -> {
+                    NotesScreen(
+                        notes = uiState.notes,
+                        onSaveNote = { title, content -> viewModel.setNoteForClass(title, content) }
+                    )
+                }
+                BottomNavTab.PROFILE -> {
+                    ProfileScreen(
+                        uiState = uiState,
+                        onSaveSettings = { gId, url, lead, title ->
+                            viewModel.updateSettings(gId, url, lead, title)
+                        },
+                        onSetThemeMode = { viewModel.setThemeMode(it) },
+                        onSetDynamicColor = { viewModel.setDynamicColor(it) },
+                        onSet24HourFormat = { viewModel.set24HourFormat(it) },
+                        onTriggerTestNotification = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                viewModel.triggerTestNotification(uiState.leadTimeMinutes)
+                            }
+                        },
+                        onSimulateChange = { viewModel.simulateChange() },
+                        onRefresh = { viewModel.refreshSchedule() }
+                    )
+                }
+                BottomNavTab.SCHEDULE -> {
+                    // MAIN SCHEDULE SCREEN matching screenshots 1 & 2
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // 1. Top Bar: "Расписание" + Subtitle + Group Avatar Button
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { viewModel.selectTab(BottomNavTab.PROFILE) }
+                            ) {
+                                Text(
+                                    text = "Расписание",
+                                    fontSize = 30.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = uiState.groupTitle,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            // Circular avatar container on the right
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    .clickable { viewModel.selectTab(BottomNavTab.PROFILE) }
+                            ) {
+                                if (uiState.isSyncing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(22.dp),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        strokeWidth = 2.5.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Groups,
+                                        contentDescription = "Группа",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // 2. M3 Pill Search Bar
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                .padding(horizontal = 16.dp, vertical = 13.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Box(modifier = Modifier.weight(1f)) {
+                                    if (uiState.searchQuery.isEmpty()) {
+                                        Text(
+                                            text = "Поиск предмета, препода, аудито...",
+                                            fontSize = 15.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                        )
+                                    }
+
+                                    BasicTextField(
+                                        value = uiState.searchQuery,
+                                        onValueChange = { viewModel.setSearchQuery(it) },
+                                        singleLine = true,
+                                        textStyle = TextStyle(
+                                            fontSize = 15.sp,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontWeight = FontWeight.Normal
+                                        ),
+                                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                if (uiState.searchQuery.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = { viewModel.setSearchQuery("") },
+                                        modifier = Modifier.size(20.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Очистить",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // 3. Day Selector Strip (matching screenshots)
+                        DaySelectorStrip(
+                            selectedDateMillis = uiState.selectedDateMillis,
+                            onDateSelected = { viewModel.selectDate(it) },
+                            eventsCountMap = classCounts
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // 4. Day Summary Row ("Сегодня", "среда, 16 сентября", "4 пары", "08:15—14:25")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Column {
+                                Text(
+                                    text = dayHeaderTitle,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = dayHeaderSubtitle,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            if (dayEvents.isNotEmpty()) {
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = pairsWord,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (dayTimeSpan.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = dayTimeSpan,
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 5. Classes List
+                        if (dayEvents.isEmpty()) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .padding(32.dp)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = if (uiState.searchQuery.isNotBlank()) "Ничего не найдено" else "Занятий нет",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = if (uiState.searchQuery.isNotBlank()) {
+                                            "Попробуйте изменить поисковый запрос"
+                                        } else {
+                                            "В этот день у группы нет запланированных пар"
+                                        },
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        } else {
+                            LazyColumn(
+                                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                items(dayEvents, key = { it.id }) { event ->
+                                    ClassCard(
+                                        event = event,
+                                        is24HourFormat = uiState.is24HourFormat,
+                                        onCardClick = { selectedEventForDetail = it }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Detail Dialog
+    selectedEventForDetail?.let { event ->
+        ClassDetailDialog(
+            event = event,
+            is24HourFormat = uiState.is24HourFormat,
+            onDismiss = { selectedEventForDetail = null },
+            onSetReminder = {
+                viewModel.setReminderForClass(it)
+                selectedEventForDetail = null
+            }
+        )
+    }
+}

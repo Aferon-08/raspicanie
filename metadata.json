@@ -1,0 +1,8 @@
+{
+  "name": "Planovo Расписание",
+  "description": "Приложение для просмотра расписания занятий Planovo со статусами в реальном времени, отслеживанием изменений и системными уведомлениями.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
