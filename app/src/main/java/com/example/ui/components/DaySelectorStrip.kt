@@ -207,9 +207,10 @@ fun DaySelectorStrip(
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.Top,
                 modifier = Modifier
                     .size(68.dp)
+                    .padding(top = 13.dp)
                     .graphicsLayer {
                         scaleX = selectedScale
                         scaleY = selectedScale
