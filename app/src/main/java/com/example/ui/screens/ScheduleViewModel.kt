@@ -48,6 +48,7 @@ data class ScheduleUiState(
     val isSyncing: Boolean = false,
     val syncFeedback: String? = null,
     val filter: ClassFilter = ClassFilter.ALL,
+    val showCancelledClasses: Boolean = true,
     val searchQuery: String = "",
     val groupId: String = "41",
     val groupTitle: String = "2423 УИР · 3 курс",
@@ -98,6 +99,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             val isSameDay = calEvent.get(Calendar.YEAR) == selYear && calEvent.get(Calendar.DAY_OF_YEAR) == selDay
             if (!isSameDay) return@filter false
 
+            // Hide cancelled classes when the schedule toggle is disabled.
+            if (!state.showCancelledClasses && ev.isCancelled) return@filter false
+
             // Filter logic
             val matchesFilter = when (state.filter) {
                 ClassFilter.ALL -> true
@@ -121,10 +125,11 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Class count per day for badges on DaySelectorStrip
-    val classCountByDay: StateFlow<Map<Long, Int>> = allEvents.combine(_uiState) { events, _ ->
+    val classCountByDay: StateFlow<Map<Long, Int>> = allEvents.combine(_uiState) { events, state ->
         val map = mutableMapOf<Long, Int>()
         val cal = com.example.util.ScheduleTimeFormatter.getCalendar()
         events.forEach { ev ->
+            if (!state.showCancelledClasses && ev.isCancelled) return@forEach
             cal.timeInMillis = ev.startTimeMillis
             cal.set(Calendar.HOUR_OF_DAY, 0)
             cal.set(Calendar.MINUTE, 0)
@@ -177,6 +182,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun setFilter(filter: ClassFilter) {
         _uiState.value = _uiState.value.copy(filter = filter)
+    }
+
+    fun setShowCancelledClasses(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showCancelledClasses = show)
     }
 
     fun setSearchQuery(query: String) {
