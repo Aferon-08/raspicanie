@@ -99,9 +99,9 @@ fun DaySelectorStrip(
 
     LazyRow(
         state = listState,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 7.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
-        modifier = modifier.fillMaxWidth().height(66.dp)
+        modifier = modifier.fillMaxWidth().height(72.dp)
     ) {
         items(days, key = { it.dateMillis }) { day ->
             val isSelected = day.dateMillis == selectedDateMillis
