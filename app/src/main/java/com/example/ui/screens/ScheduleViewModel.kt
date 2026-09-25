@@ -124,6 +124,40 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }.sortedBy { it.startTimeMillis }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Same selected-day filtering as dayEvents, but keeps cancelled classes in the list
+    // so the UI can animate their disappearance and reappearance.
+    val dayEventsIncludingCancelled: StateFlow<List<ClassEvent>> = combine(allEvents, _uiState) { events, state ->
+        val calSelected = com.example.util.ScheduleTimeFormatter.getCalendar(state.selectedDateMillis)
+        val selYear = calSelected.get(Calendar.YEAR)
+        val selDay = calSelected.get(Calendar.DAY_OF_YEAR)
+
+        val calEvent = com.example.util.ScheduleTimeFormatter.getCalendar()
+        val now = System.currentTimeMillis()
+
+        events.filter { ev ->
+            calEvent.timeInMillis = ev.startTimeMillis
+            val isSameDay = calEvent.get(Calendar.YEAR) == selYear && calEvent.get(Calendar.DAY_OF_YEAR) == selDay
+            if (!isSameDay) return@filter false
+
+            val matchesFilter = when (state.filter) {
+                ClassFilter.ALL -> true
+                ClassFilter.UPCOMING_ONLY -> ev.endTimeMillis > now && !ev.isCancelled
+                ClassFilter.CHANGES_ONLY -> ev.hasChanges || ev.isCancelled
+            }
+            if (!matchesFilter) return@filter false
+
+            if (state.searchQuery.isNotBlank()) {
+                val q = state.searchQuery.trim().lowercase()
+                ev.title.lowercase().contains(q) ||
+                    ev.teacher.lowercase().contains(q) ||
+                    ev.location.lowercase().contains(q) ||
+                    ev.description.lowercase().contains(q)
+            } else {
+                true
+            }
+        }.sortedBy { it.startTimeMillis }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // Class count per day for badges on DaySelectorStrip
     val classCountByDay: StateFlow<Map<Long, Int>> = allEvents.combine(_uiState) { events, state ->
         val map = mutableMapOf<Long, Int>()
