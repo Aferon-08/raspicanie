@@ -171,7 +171,7 @@ fun ScheduleScreen(
                             contentDescription = "Расписание"
                         )
                     },
-                    label = { Text("Расписание") },
+                    label = { Text("Расписание", maxLines = 1, softWrap = false, fontSize = 11.sp) },
                     colors = NavigationBarItemDefaults.colors(
                         indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                         selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -198,7 +198,7 @@ fun ScheduleScreen(
                             )
                         }
                     },
-                    label = { Text("Пропуски") },
+                    label = { Text("Пропуски", maxLines = 1, softWrap = false, fontSize = 11.sp) },
                     colors = NavigationBarItemDefaults.colors(
                         indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                         selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -216,7 +216,7 @@ fun ScheduleScreen(
                             contentDescription = "Заметки"
                         )
                     },
-                    label = { Text("Заметки") },
+                    label = { Text("Заметки", maxLines = 1, softWrap = false, fontSize = 11.sp) },
                     colors = NavigationBarItemDefaults.colors(
                         indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                         selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -234,7 +234,7 @@ fun ScheduleScreen(
                             contentDescription = "Профиль"
                         )
                     },
-                    label = { Text("Профиль") },
+                    label = { Text("Профиль", maxLines = 1, softWrap = false, fontSize = 11.sp) },
                     colors = NavigationBarItemDefaults.colors(
                         indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                         selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -344,71 +344,9 @@ fun ScheduleScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // 2. M3 Pill Search Bar
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                .padding(horizontal = 16.dp, vertical = 13.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-
-                                Spacer(modifier = Modifier.width(10.dp))
-
-                                Box(modifier = Modifier.weight(1f)) {
-                                    if (uiState.searchQuery.isEmpty()) {
-                                        Text(
-                                            text = "Поиск предмета, препода, аудито...",
-                                            fontSize = 15.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                        )
-                                    }
-
-                                    BasicTextField(
-                                        value = uiState.searchQuery,
-                                        onValueChange = { viewModel.setSearchQuery(it) },
-                                        singleLine = true,
-                                        textStyle = TextStyle(
-                                            fontSize = 15.sp,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            fontWeight = FontWeight.Normal
-                                        ),
-                                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-
-                                if (uiState.searchQuery.isNotEmpty()) {
-                                    IconButton(
-                                        onClick = { viewModel.setSearchQuery("") },
-                                        modifier = Modifier.size(20.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = "Очистить",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // 3. Day Selector Strip (matching screenshots)
+                        // 2. Day Selector Strip (matching screenshots)
                         DaySelectorStrip(
                             selectedDateMillis = uiState.selectedDateMillis,
                             onDateSelected = { viewModel.selectDate(it) },
@@ -417,7 +355,7 @@ fun ScheduleScreen(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // 4. Day Summary Row ("Сегодня", "среда, 16 сентября", "4 пары", "08:15—14:25")
+                        // 3. Day Summary Row ("Сегодня", "среда, 16 сентября", "4 пары", "08:15—14:25")
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -425,7 +363,7 @@ fun ScheduleScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Bottom
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(
                                     text = dayHeaderTitle,
                                     fontSize = 22.sp,
@@ -441,6 +379,7 @@ fun ScheduleScreen(
                             }
 
                             if (dayEvents.isNotEmpty()) {
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
                                         text = pairsWord,
@@ -462,7 +401,7 @@ fun ScheduleScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // 5. Classes List
+                        // 4. Classes List
                         if (dayEvents.isEmpty()) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -473,18 +412,14 @@ fun ScheduleScreen(
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = if (uiState.searchQuery.isNotBlank()) "Ничего не найдено" else "Занятий нет",
+                                        text = "Занятий нет",
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = if (uiState.searchQuery.isNotBlank()) {
-                                            "Попробуйте изменить поисковый запрос"
-                                        } else {
-                                            "В этот день у группы нет запланированных пар"
-                                        },
+                                        text = "В этот день у группы нет запланированных пар",
                                         fontSize = 14.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
