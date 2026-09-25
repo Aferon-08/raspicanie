@@ -1,6 +1,8 @@
 package com.example.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -133,13 +136,23 @@ fun DaySelectorStrip(
                 label = "day_dom_color"
             )
 
+            val selectedScale by animateFloatAsState(
+                targetValue = if (isSelected) 1f else 0.94f,
+                animationSpec = spring(dampingRatio = 0.72f, stiffness = 500f),
+                label = "day_selected_scale"
+            )
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .width(52.dp)
                     .height(76.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .graphicsLayer {
+                        scaleX = selectedScale
+                        scaleY = selectedScale
+                    }
+                    .clip(RoundedCornerShape(if (isSelected) 26.dp else 22.dp))
                     .background(containerColor)
                     .clickable { onDateSelected(day.dateMillis) }
                     .testTag("day_item_${day.dayOfMonth}")
