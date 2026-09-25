@@ -383,6 +383,80 @@ fun ClassCard(
                             }
                         }
 
+                        if (event.isOnline) {
+                            val meetingUrl = event.onlineMeetingUrl
+                            val meetingId = event.onlineMeetingId
+                            val meetingPassword = event.onlineMeetingPassword
+                            val hasMeetingDetails = meetingUrl != null || meetingId != null || meetingPassword != null
+
+                            if (hasMeetingDetails) {
+                                Spacer(modifier = Modifier.height(9.dp))
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(
+                                            if (isOngoing) {
+                                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)
+                                            } else {
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                            }
+                                        )
+                                        .padding(horizontal = 11.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "ОНЛАЙН • ZOOM",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.4.sp,
+                                        color = if (isOngoing) {
+                                            MaterialTheme.colorScheme.onPrimary
+                                        } else {
+                                            MaterialTheme.colorScheme.primary
+                                        }
+                                    )
+
+                                    meetingId?.let { id ->
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "Конференция: $id",
+                                            fontSize = 12.sp,
+                                            color = contentSecondaryColor,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    meetingPassword?.let { password ->
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Пароль: $password",
+                                            fontSize = 12.sp,
+                                            color = contentSecondaryColor,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    meetingUrl?.let { url ->
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = url,
+                                            fontSize = 11.sp,
+                                            color = if (isOngoing) {
+                                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                                            } else {
+                                                MaterialTheme.colorScheme.primary
+                                            },
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         if (isCancelled) {
                             Spacer(modifier = Modifier.height(5.dp))
                             Text(
