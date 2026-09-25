@@ -5,7 +5,6 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -31,6 +30,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.animateItem
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -405,25 +405,19 @@ fun ScheduleScreen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 items(dayEvents, key = { it.id }) { event ->
-                                    AnimatedVisibility(
-                                        visible = true,
-                                        enter = fadeIn(
-                                            animationSpec = tween(
+                                    ClassCard(
+                                        event = event,
+                                        is24HourFormat = uiState.is24HourFormat,
+                                        onCardClick = { selectedEventForDetail = it },
+                                        modifier = Modifier.animateItem(
+                                            fadeInSpec = tween(
                                                 durationMillis = 420,
                                                 delayMillis = 45
-                                            )
-                                        ) + slideInVertically(
-                                            animationSpec = tween(durationMillis = 420),
-                                            initialOffsetY = { it / 5 }
-                                        ),
-                                        exit = fadeOut(animationSpec = tween(180))
-                                    ) {
-                                        ClassCard(
-                                            event = event,
-                                            is24HourFormat = uiState.is24HourFormat,
-                                            onCardClick = { selectedEventForDetail = it }
+                                            ),
+                                            fadeOutSpec = tween(durationMillis = 220),
+                                            placementSpec = spring()
                                         )
-                                    }
+                                    )
                                 }
                             }
                         }
