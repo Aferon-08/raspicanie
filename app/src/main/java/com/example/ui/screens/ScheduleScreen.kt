@@ -5,11 +5,16 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
@@ -31,6 +36,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,6 +71,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,6 +93,7 @@ import com.example.ui.components.ClassCard
 import com.example.ui.components.ClassDetailDialog
 import com.example.ui.components.ExpressiveBottomBar
 import com.example.ui.components.DaySelectorStrip
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -99,10 +107,13 @@ fun ScheduleScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val dayEvents by viewModel.dayEvents.collectAsStateWithLifecycle()
+    val dayEventsIncludingCancelled by viewModel.dayEventsIncludingCancelled.collectAsStateWithLifecycle()
     val allChanges by viewModel.allChanges.collectAsStateWithLifecycle()
     val classCounts by viewModel.classCountByDay.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val classListState = rememberLazyListState()
+    val scheduleScope = rememberCoroutineScope()
     var selectedEventForDetail by remember { mutableStateOf<ClassEvent?>(null) }
 
     // Android 13+ Notification permission
@@ -159,6 +170,15 @@ fun ScheduleScreen(
             ExpressiveBottomBar(
                 currentTab = uiState.currentTab,
                 changesCount = allChanges.size,
+                showCancelledClasses = uiState.showCancelledClasses,
+                onToggleCancelled = {
+                    val wasAtTop = classListState.firstVisibleItemIndex == 0 &&
+                        classListState.firstVisibleItemScrollOffset < 12
+                    viewModel.setShowCancelledClasses(!uiState.showCancelledClasses)
+                    if (wasAtTop) {
+                        scheduleScope.launch { classListState.scrollToItem(0) }
+                    }
+                },
                 onTabSelected = { viewModel.selectTab(it) }
             )
         }
@@ -316,77 +336,10 @@ fun ScheduleScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        val cancelledToggleColor by animateColorAsState(
-                            targetValue = if (uiState.showCancelledClasses) {
-                                MaterialTheme.colorScheme.surfaceContainer
-                            } else {
-                                MaterialTheme.colorScheme.errorContainer
-                            },
-                            animationSpec = tween(260),
-                            label = "cancelled_toggle_icon_color"
-                        )
-                        val cancelledToggleRotation by animateFloatAsState(
-                            targetValue = if (uiState.showCancelledClasses) 0f else -10f,
-                            animationSpec = spring(dampingRatio = 0.7f, stiffness = 500f),
-                            label = "cancelled_toggle_icon_rotation"
-                        )
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 5.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainer)
-                                .padding(horizontal = 10.dp, vertical = 5.dp)
-                                .animateContentSize(animationSpec = spring()),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(cancelledToggleColor)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.EventBusy,
-                                    contentDescription = "Отменённые занятия",
-                                    tint = if (uiState.showCancelledClasses) {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    } else {
-                                        MaterialTheme.colorScheme.onErrorContainer
-                                    },
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .rotate(cancelledToggleRotation)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(9.dp))
-
-                            Text(
-                                text = "Отменённые",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            Switch(
-                                checked = uiState.showCancelledClasses,
-                                onCheckedChange = viewModel::setShowCancelledClasses,
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    uncheckedBorderColor = MaterialTheme.colorScheme.outline
-                                )
-                            )
-                        }
+                        // Cancelled-class filter is now a compact animated action in the bottom bar.
 
                         // 4. Classes List
-                        if (dayEvents.isEmpty()) {
+                        if (dayEventsIncludingCancelled.isEmpty()) {
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
@@ -411,18 +364,35 @@ fun ScheduleScreen(
                             }
                         } else {
                             LazyColumn(
+                                state = classListState,
                                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
                                 verticalArrangement = Arrangement.spacedBy(14.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                items(dayEvents, key = { it.id }) { event ->
-                                    ClassCard(
-                                        event = event,
-                                        is24HourFormat = uiState.is24HourFormat,
-                                        onCardClick = { selectedEventForDetail = it },
-                                        modifier = Modifier
-                                            .animateContentSize(animationSpec = spring())
-                                    )
+                                items(dayEventsIncludingCancelled, key = { it.id }) { event ->
+                                    val visible = uiState.showCancelledClasses || !event.isCancelled
+
+                                    AnimatedVisibility(
+                                        visible = visible,
+                                        enter = expandVertically(
+                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                        ) + fadeIn(tween(260)) + scaleIn(
+                                            initialScale = 0.92f,
+                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                        ),
+                                        exit = shrinkVertically(
+                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                        ) + fadeOut(tween(180)) + scaleOut(
+                                            targetScale = 0.92f,
+                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                        )
+                                    ) {
+                                        ClassCard(
+                                            event = event,
+                                            is24HourFormat = uiState.is24HourFormat,
+                                            onCardClick = { selectedEventForDetail = it }
+                                        )
+                                    }
                                 }
                             }
                         }
