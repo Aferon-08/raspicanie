@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.animateItemPlacement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -456,9 +455,8 @@ fun ScheduleScreen(
                                         event = event,
                                         is24HourFormat = uiState.is24HourFormat,
                                         onCardClick = { selectedEventForDetail = it },
-                                        modifier = Modifier.animateItemPlacement(
-                                            animationSpec = spring()
-                                        )
+                                        modifier = Modifier
+                                            .animateContentSize(animationSpec = spring())
                                     )
                                 }
                             }
