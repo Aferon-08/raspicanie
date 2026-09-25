@@ -23,12 +23,21 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,7 +63,33 @@ fun ClassDetailDialog(
     onDismiss: () -> Unit,
     onSetReminder: (ClassEvent) -> Unit
 ) {
-    val status = event.getStatus(currentTimeMillis)
+    var liveTimeMillis by remember(event.id) { mutableLongStateOf(currentTimeMillis) }
+
+    LaunchedEffect(event.id) {
+        while (true) {
+            liveTimeMillis = System.currentTimeMillis()
+            delay(1_000L)
+        }
+    }
+
+    val status = event.getStatus(liveTimeMillis)
+    val statusColor by animateColorAsState(
+        targetValue = when (status) {
+            ClassStatus.ONGOING -> MaterialTheme.colorScheme.primary
+            ClassStatus.CANCELLED -> MaterialTheme.colorScheme.error
+            ClassStatus.COMPLETED -> MaterialTheme.colorScheme.onSurfaceVariant
+            ClassStatus.UPCOMING -> MaterialTheme.colorScheme.secondary
+        },
+        animationSpec = spring(),
+        label = "detail_status_color"
+    )
+    val statusText = when (status) {
+        ClassStatus.ONGOING -> "Сейчас идёт"
+        ClassStatus.CANCELLED -> "Отменено"
+        ClassStatus.COMPLETED -> "Завершено"
+        ClassStatus.UPCOMING -> "Предстоит"
+    }
+
     val startStr = ScheduleTimeFormatter.formatTime(event.startTimeMillis, is24HourFormat)
     val endStr = ScheduleTimeFormatter.formatTime(event.endTimeMillis, is24HourFormat)
     val dateStr = ScheduleTimeFormatter.formatDate(event.startTimeMillis, "EEEE, d MMMM yyyy").replaceFirstChar { it.uppercase() }
@@ -76,6 +111,20 @@ fun ClassDetailDialog(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(statusColor.copy(alpha = 0.12f))
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Text(
+                        text = statusText,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = statusColor
                     )
                 }
                 Spacer(modifier = Modifier.height(10.dp))
