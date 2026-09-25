@@ -99,9 +99,9 @@ fun DaySelectorStrip(
 
     LazyRow(
         state = listState,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = modifier.fillMaxWidth()
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        modifier = modifier.fillMaxWidth().height(66.dp)
     ) {
         items(days, key = { it.dateMillis }) { day ->
             val isSelected = day.dateMillis == selectedDateMillis
@@ -145,13 +145,13 @@ fun DaySelectorStrip(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
-                    .width(52.dp)
-                    .height(76.dp)
+                    .width(47.dp)
+                    .height(58.dp)
                     .graphicsLayer {
                         scaleX = selectedScale
                         scaleY = selectedScale
                     }
-                    .clip(RoundedCornerShape(if (isSelected) 26.dp else 22.dp))
+                    .clip(RoundedCornerShape(if (isSelected) 20.dp else 17.dp))
                     .background(containerColor)
                     .clickable { onDateSelected(day.dateMillis) }
                     .testTag("day_item_${day.dayOfMonth}")
@@ -159,26 +159,26 @@ fun DaySelectorStrip(
                 // Day of week (e.g. Пн, Вт, Ср)
                 Text(
                     text = day.dayOfWeek,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                     color = dowColor
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // Day number (e.g. 14, 15, 16)
                 Text(
                     text = day.dayOfMonth,
-                    fontSize = 19.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = domColor
                 )
 
                 if (hasClasses && !isSelected) {
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Box(
                         modifier = Modifier
-                            .size(4.dp)
+                            .size(3.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
                     )
