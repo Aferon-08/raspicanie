@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -92,16 +93,11 @@ fun ExpressiveBottomBar(
                 modifier = Modifier.width(itemWidth),
                 contentAlignment = Alignment.Center
             ) {
-                androidx.compose.foundation.clickable(
-                    indication = null,
-                    interactionSource = null
-                ) {
-                    onTabSelected(tab)
-                }.let { clickModifier ->
-                    Column(
-                        modifier = clickModifier
-                            .background(containerColor, RoundedCornerShape(24.dp))
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                Column(
+                    modifier = Modifier
+                        .clickable { onTabSelected(tab) }
+                        .background(containerColor, RoundedCornerShape(24.dp))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         if (tab == BottomNavTab.PASSES && changesCount > 0) {
@@ -130,7 +126,6 @@ fun ExpressiveBottomBar(
                                 lineHeight = 13.sp
                             )
                         }
-                    }
                 }
             }
         }
