@@ -5,8 +5,11 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -283,19 +286,25 @@ fun ScheduleScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Bottom
                         ) {
-                            Column(modifier = Modifier.weight(1f, fill = false)) {
-                                Text(
-                                    text = dayHeaderTitle,
+                            AnimatedContent(
+                                targetState = dayHeaderTitle,
+                                transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(120)) },
+                                label = "day_header_title"
+                            ) { title ->
+                                Column(modifier = Modifier.weight(1f, fill = false)) {
+                                    Text(
+                                        text = title,
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = dayHeaderSubtitle,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                    Text(
+                                        text = dayHeaderSubtitle,
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
 
                             if (dayEvents.isNotEmpty()) {
@@ -352,11 +361,25 @@ fun ScheduleScreen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 items(dayEvents, key = { it.id }) { event ->
-                                    ClassCard(
-                                        event = event,
-                                        is24HourFormat = uiState.is24HourFormat,
-                                        onCardClick = { selectedEventForDetail = it }
-                                    )
+                                    AnimatedVisibility(
+                                        visible = true,
+                                        enter = fadeIn(
+                                            animationSpec = tween(
+                                                durationMillis = 420,
+                                                delayMillis = 45
+                                            )
+                                        ) + slideInVertically(
+                                            animationSpec = tween(durationMillis = 420),
+                                            initialOffsetY = { it / 5 }
+                                        ),
+                                        exit = fadeOut(animationSpec = tween(180))
+                                    ) {
+                                        ClassCard(
+                                            event = event,
+                                            is24HourFormat = uiState.is24HourFormat,
+                                            onCardClick = { selectedEventForDetail = it }
+                                        )
+                                    }
                                 }
                             }
                         }
