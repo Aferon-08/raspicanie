@@ -140,16 +140,6 @@ fun ScheduleScreen(
         com.example.util.ScheduleTimeFormatter.formatDate(uiState.selectedDateMillis, "EEEE, d MMMM")
     }
 
-    val dayTimeSpan = remember(dayEvents, uiState.is24HourFormat) {
-        if (dayEvents.isEmpty()) "" else {
-            val first = dayEvents.minByOrNull { it.startTimeMillis }?.startTimeMillis
-            val last = dayEvents.maxByOrNull { it.endTimeMillis }?.endTimeMillis
-            if (first != null && last != null) {
-                "${com.example.util.ScheduleTimeFormatter.formatTime(first, uiState.is24HourFormat)}—${com.example.util.ScheduleTimeFormatter.formatTime(last, uiState.is24HourFormat)}"
-            } else ""
-        }
-    }
-
     val pairsWord = remember(dayEvents.size) {
         val count = dayEvents.size
         when {
@@ -315,22 +305,12 @@ fun ScheduleScreen(
 
                             if (dayEvents.isNotEmpty()) {
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = pairsWord,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    if (dayTimeSpan.isNotBlank()) {
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = dayTimeSpan,
-                                            fontSize = 14.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
+                                Text(
+                                    text = pairsWord,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
 
