@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -137,6 +139,15 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     init {
         // Initial sync on app start
         refreshSchedule()
+
+        // Keep the local schedule fresh while the app process is alive.
+        // A request is started approximately once every minute.
+        viewModelScope.launch {
+            while (isActive) {
+                delay(60_000L)
+                refreshSchedule()
+            }
+        }
     }
 
     fun selectTab(tab: BottomNavTab) {
