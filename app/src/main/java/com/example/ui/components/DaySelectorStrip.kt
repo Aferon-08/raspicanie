@@ -101,7 +101,7 @@ fun DaySelectorStrip(
         state = listState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
-        modifier = modifier.fillMaxWidth().height(80.dp)
+        modifier = modifier.fillMaxWidth().height(76.dp)
     ) {
         items(days, key = { it.dateMillis }) { day ->
             val isSelected = day.dateMillis == selectedDateMillis
@@ -136,7 +136,7 @@ fun DaySelectorStrip(
             )
 
             val selectedScale by animateFloatAsState(
-                targetValue = if (isSelected) 1f else 0.94f,
+                targetValue = if (isSelected) 1f else 0.96f,
                 animationSpec = spring(dampingRatio = 0.72f, stiffness = 500f),
                 label = "day_selected_scale"
             )
@@ -145,13 +145,12 @@ fun DaySelectorStrip(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
-                    .width(47.dp)
-                    .height(58.dp)
+                    .size(56.dp)
                     .graphicsLayer {
                         scaleX = selectedScale
                         scaleY = selectedScale
                     }
-                    .clip(RoundedCornerShape(if (isSelected) 20.dp else 17.dp))
+                    .clip(RoundedCornerShape(if (isSelected) 16.dp else 15.dp))
                     .background(containerColor)
                     .clickable { onDateSelected(day.dateMillis) }
                     .testTag("day_item_${day.dayOfMonth}")
