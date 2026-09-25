@@ -29,6 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +44,58 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+
+private class BlobDayShape(
+    private val progress: Float
+) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        val p = progress.coerceIn(0f, 1f)
+        val w = size.width
+        val h = size.height
+
+        // Start as a soft square and morph into an asymmetric, organic blob.
+        val base = minOf(w, h) * 0.24f
+        val rTopLeft = base * (1f + 0.45f * p)
+        val rTopRight = base * (1f + 0.05f * p)
+        val rBottomRight = base * (1f + 0.62f * p)
+        val rBottomLeft = base * (1f + 0.18f * p)
+        val k = 0.5522848f
+
+        val path = Path()
+        path.moveTo(rTopLeft, 0f)
+        path.lineTo(w - rTopRight, 0f)
+        path.cubicTo(
+            w - rTopRight + rTopRight * k, 0f,
+            w, rTopRight - rTopRight * k,
+            w, rTopRight
+        )
+        path.lineTo(w, h - rBottomRight)
+        path.cubicTo(
+            w, h - rBottomRight + rBottomRight * k,
+            w - rBottomRight * k, h,
+            w - rBottomRight, h
+        )
+        path.lineTo(rBottomLeft, h)
+        path.cubicTo(
+            rBottomLeft - rBottomLeft * k, h,
+            0f, h - rBottomLeft + rBottomLeft * k,
+            0f, h - rBottomLeft
+        )
+        path.lineTo(0f, rTopLeft)
+        path.cubicTo(
+            0f, rTopLeft - rTopLeft * k,
+            rTopLeft - rTopLeft * k, 0f,
+            rTopLeft, 0f
+        )
+
+        return Outline.Generic(path)
+    }
+}
 
 data class DayItem(
     val dateMillis: Long,
@@ -99,9 +157,9 @@ fun DaySelectorStrip(
 
     LazyRow(
         state = listState,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
-        modifier = modifier.fillMaxWidth().height(88.dp)
+        modifier = modifier.fillMaxWidth().height(96.dp)
     ) {
         items(days, key = { it.dateMillis }) { day ->
             val isSelected = day.dateMillis == selectedDateMillis
@@ -141,16 +199,22 @@ fun DaySelectorStrip(
                 label = "day_selected_scale"
             )
 
+            val shapeProgress by animateFloatAsState(
+                targetValue = if (isSelected) 1f else 0f,
+                animationSpec = spring(dampingRatio = 0.68f, stiffness = 420f),
+                label = "day_blob_shape"
+            )
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(68.dp)
                     .graphicsLayer {
                         scaleX = selectedScale
                         scaleY = selectedScale
                     }
-                    .clip(RoundedCornerShape(if (isSelected) 18.dp else 17.dp))
+                    .clip(BlobDayShape(shapeProgress))
                     .background(containerColor)
                     .clickable { onDateSelected(day.dateMillis) }
                     .testTag("day_item_${day.dayOfMonth}")
