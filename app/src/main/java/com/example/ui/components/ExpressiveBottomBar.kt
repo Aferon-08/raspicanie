@@ -63,12 +63,12 @@ fun ExpressiveBottomBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = 14.dp, vertical = 7.dp)
             .background(
                 MaterialTheme.colorScheme.surfaceContainer,
-                RoundedCornerShape(30.dp)
+                RoundedCornerShape(24.dp)
             )
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .padding(horizontal = 5.dp, vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -85,12 +85,12 @@ fun ExpressiveBottomBar(
                 label = "nav_content"
             )
             val itemWidth by animateDpAsState(
-                targetValue = if (selected) 108.dp else 58.dp,
+                targetValue = if (selected) 122.dp else 50.dp,
                 animationSpec = spring(dampingRatio = 0.78f, stiffness = 500f),
                 label = "nav_width"
             )
             val itemScale by animateFloatAsState(
-                targetValue = if (selected) 1f else 0.94f,
+                targetValue = if (selected) 1f else 0.96f,
                 animationSpec = spring(dampingRatio = 0.8f, stiffness = 550f),
                 label = "nav_scale"
             )
@@ -109,15 +109,15 @@ fun ExpressiveBottomBar(
                         .clickable { onTabSelected(tab) }
                         .background(containerColor, RoundedCornerShape(24.dp))
                         .padding(horizontal = 10.dp, vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalArrangement = Arrangement.Center,\n                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (tab == BottomNavTab.PASSES && changesCount > 0) {
-                            BadgedBox(badge = { Badge { Text(changesCount.toString(), fontSize = 9.sp) } }) {
+                            BadgedBox(badge = { Badge { Text(changesCount.toString(), fontSize = 8.sp) } }) {
                                 Icon(
                                     imageVector = if (selected) icons.second else icons.first,
                                     contentDescription = label,
                                     tint = contentColor,
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(21.dp)
                                 )
                             }
                         } else {
