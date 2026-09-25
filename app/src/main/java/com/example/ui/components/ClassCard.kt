@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +26,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,7 +58,20 @@ fun ClassCard(
     onCardClick: (ClassEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val status = event.getStatus(currentTimeMillis)
+    // Keep the card's clock alive independently from parent recompositions.
+    // This makes the progress bar and remaining-time label update every second.
+    var liveTimeMillis by remember(event.id) {
+        mutableLongStateOf(currentTimeMillis)
+    }
+
+    LaunchedEffect(event.id) {
+        while (true) {
+            liveTimeMillis = System.currentTimeMillis()
+            delay(1_000L)
+        }
+    }
+
+    val status = event.getStatus(liveTimeMillis)
     val startStr = ScheduleTimeFormatter.formatTime(event.startTimeMillis, is24HourFormat)
     val endStr = ScheduleTimeFormatter.formatTime(event.endTimeMillis, is24HourFormat)
 
@@ -270,7 +291,7 @@ fun ClassCard(
             // Bottom Section: Ongoing wave progress OR Upcoming countdown
             if (isOngoing) {
                 Spacer(modifier = Modifier.height(14.dp))
-                val remainingMin = event.getRemainingMinutes(currentTimeMillis)
+                val remainingMin = event.getRemainingMinutes(liveTimeMillis)
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -299,16 +320,23 @@ fun ClassCard(
                     )
                 }
 
-                // Squiggly wave line progress bar
+                // Smoothly animate the real progress between one-second clock updates.
+                val targetProgress = event.getProgress(liveTimeMillis)
+                val animatedProgress by animateFloatAsState(
+                    targetValue = targetProgress,
+                    animationSpec = tween(durationMillis = 950),
+                    label = "lesson_progress"
+                )
+
                 SquigglyProgressBar(
-                    progress = event.getProgress(currentTimeMillis),
+                    progress = animatedProgress,
                     activeColor = MaterialTheme.colorScheme.onPrimary,
                     trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.28f),
                     modifier = Modifier.padding(top = 2.dp)
                 )
             } else if (isUpcomingSoon) {
                 Spacer(modifier = Modifier.height(12.dp))
-                val minutesUntil = event.getMinutesUntilStart(currentTimeMillis)
+                val minutesUntil = event.getMinutesUntilStart(liveTimeMillis)
                 val timeUntilText = if (minutesUntil >= 60) {
                     val hours = minutesUntil / 60
                     val mins = minutesUntil % 60
