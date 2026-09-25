@@ -34,6 +34,13 @@ fun MyApplicationTheme(
         SideEffect {
             val window = (view.context as Activity).window
             val insetsController = WindowCompat.getInsetsController(window, view)
+
+            // Keep Android system bars visually in sync with the app theme.
+            // The app uses edge-to-edge, so the status bar is transparent and
+            // the content drawn underneath it provides the actual background.
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+
             insetsController.isAppearanceLightStatusBars = !darkTheme
             insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
