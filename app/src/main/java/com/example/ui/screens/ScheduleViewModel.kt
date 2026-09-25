@@ -60,7 +60,8 @@ data class ScheduleUiState(
     val is24HourFormat: Boolean = true,
     val debugAnimationMode: Boolean = false,
     val notes: Map<String, String> = emptyMap(),
-    val missedClasses: Set<String> = emptySet()
+    val missedClasses: Set<String> = emptySet(),
+    val reminderEventIds: Set<String> = emptySet()
 )
 
 class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
