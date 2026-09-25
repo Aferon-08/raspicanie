@@ -403,7 +403,6 @@ fun ScheduleScreen(
                             LazyColumn(
                                 state = classListState,
                                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
-                                verticalArrangement = Arrangement.spacedBy(14.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 items(dayEventsIncludingCancelled, key = { it.id }) { event ->
@@ -424,11 +423,15 @@ fun ScheduleScreen(
                                             animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
                                         )
                                     ) {
-                                        ClassCard(
-                                            event = event,
-                                            is24HourFormat = uiState.is24HourFormat,
-                                            onCardClick = { selectedEventForDetail = it }
-                                        )
+                                        Box(
+                                            modifier = Modifier.padding(bottom = 14.dp)
+                                        ) {
+                                            ClassCard(
+                                                event = event,
+                                                is24HourFormat = uiState.is24HourFormat,
+                                                onCardClick = { selectedEventForDetail = it }
+                                            )
+                                        }
                                     }
                                 }
                             }
