@@ -1,6 +1,9 @@
 package com.example.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,12 +84,23 @@ fun ClassCard(
     val isUpcomingSoon = status == ClassStatus.UPCOMING_SOON
 
     // Colors matching Material 3 Expressive
-    val cardBackground = when {
+    val targetCardBackground = when {
         isOngoing -> MaterialTheme.colorScheme.primary
         isCancelled -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
         isCompleted -> MaterialTheme.colorScheme.surfaceContainerLow
         else -> MaterialTheme.colorScheme.surfaceContainer
     }
+    val cardBackground by animateColorAsState(
+        targetValue = targetCardBackground,
+        animationSpec = spring(),
+        label = "class_card_background"
+    )
+
+    val cardElevation by animateDpAsState(
+        targetValue = if (isOngoing) 4.dp else 0.dp,
+        animationSpec = spring(),
+        label = "class_card_elevation"
+    )
 
     val contentPrimaryColor = when {
         isOngoing -> MaterialTheme.colorScheme.onPrimary
@@ -103,7 +117,7 @@ fun ClassCard(
     Card(
         shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isOngoing) 3.dp else 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = cardElevation),
         modifier = modifier
             .fillMaxWidth()
             .clickable { onCardClick(event) }
