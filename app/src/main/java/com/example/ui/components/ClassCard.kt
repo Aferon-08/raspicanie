@@ -5,6 +5,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -33,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberInfiniteTransition
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Outline
@@ -86,6 +93,96 @@ private class RoomBlobShape : Shape {
         p.lineTo(0f, r * 0.85f)
         p.cubicTo(0f, r * 0.2f, r * 0.4f, 0f, r * 1.15f, 0f)
         return Outline.Generic(p)
+    }
+}
+
+
+@Composable
+private fun Gear(
+    size: androidx.compose.ui.unit.Dp,
+    color: Color,
+    holeColor: Color,
+    rotation: Float,
+    teeth: Int = 10,
+    modifier: Modifier = Modifier
+) {
+    Canvas(
+        modifier = modifier
+            .size(size)
+            .graphicsLayer { rotationZ = rotation }
+    ) {
+        val center = androidx.compose.ui.geometry.Offset(this.size.width / 2f, this.size.height / 2f)
+        val outer = this.size.minDimension * 0.48f
+        val root = outer * 0.72f
+        val inner = outer * 0.46f
+        val path = Path()
+        val pointsPerTooth = 4
+
+        for (i in 0 until teeth * pointsPerTooth) {
+            val toothPhase = i % pointsPerTooth
+            val angle = (i.toFloat() / (teeth * pointsPerTooth)) * (2f * kotlin.math.PI).toFloat() - (kotlin.math.PI.toFloat() / 2f)
+            val radius = if (toothPhase == 1 || toothPhase == 2) outer else root
+            val x = center.x + kotlin.math.cos(angle) * radius
+            val y = center.y + kotlin.math.sin(angle) * radius
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        drawPath(path = path, color = color)
+        drawCircle(color = holeColor, radius = inner, center = center)
+        drawCircle(
+            color = color.copy(alpha = 0.45f),
+            radius = inner * 0.42f,
+            center = center,
+            style = Stroke(width = this.size.minDimension * 0.045f)
+        )
+    }
+}
+
+@Composable
+private fun GearCluster(
+    isOngoing: Boolean,
+    largeColor: Color,
+    smallColor: Color,
+    cardColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val transition = rememberInfiniteTransition(label = "gear_rotation")
+    val largeRotation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (isOngoing) 360f else 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(9000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "large_gear_rotation"
+    )
+    val smallRotation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (isOngoing) -360f else 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "small_gear_rotation"
+    )
+
+    Box(modifier = modifier) {
+        Gear(
+            size = 92.dp,
+            color = largeColor,
+            holeColor = cardColor,
+            rotation = largeRotation,
+            teeth = 11,
+            modifier = Modifier.align(Alignment.Center).offset(x = 17.dp, y = 3.dp)
+        )
+        Gear(
+            size = 50.dp,
+            color = smallColor,
+            holeColor = cardColor,
+            rotation = smallRotation,
+            teeth = 9,
+            modifier = Modifier.align(Alignment.TopEnd).offset(x = 8.dp, y = 8.dp)
+        )
     }
 }
 
@@ -158,6 +255,7 @@ fun ClassCard(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    Box(modifier = modifier.fillMaxWidth()) {
     Card(
         shape = RoundedCornerShape(30.dp),
         colors = CardDefaults.cardColors(containerColor = cardBackground),
@@ -278,18 +376,27 @@ fun ClassCard(
                 if (room.isNotBlank()) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(width = 104.dp, height = 118.dp)
-                            .clip(RoomBlobShape())
-                            .background(
-                                if (isOngoing) {
-                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
-                                } else {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                }
-                            )
+                        modifier = Modifier.size(width = 104.dp, height = 118.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        GearCluster(
+                            isOngoing = isOngoing,
+                            largeColor = if (isOngoing) {
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
+                            } else {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                            },
+                            smallColor = if (isOngoing) {
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.48f)
+                            } else {
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.82f)
+                            },
+                            cardColor = cardBackground,
+                            modifier = Modifier.fillMaxWidth().height(118.dp)
+                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Outlined.MeetingRoom,
                                 contentDescription = null,
@@ -396,4 +503,6 @@ fun ClassCard(
             }
         }
     }
+    }
+}
 }
