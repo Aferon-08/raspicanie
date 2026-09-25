@@ -75,13 +75,12 @@ fun ProfileScreen(
         item {
             Text(
                 text = "Профиль и настройки",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = "Параметры группы, стиль Material 3 Expressive и уведомления",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -89,7 +88,7 @@ fun ProfileScreen(
         // Section 1: Group & Schedule Source
         item {
             Card(
-                shape = RoundedCornerShape(26.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier.fillMaxWidth()
             ) {
