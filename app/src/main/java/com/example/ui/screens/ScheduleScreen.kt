@@ -177,7 +177,7 @@ fun ScheduleScreen(
     ) { innerPadding ->
         AnimatedContent(
             targetState = uiState.currentTab,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            transitionSpec = { (fadeIn(tween(220)) + scaleIn(initialScale = 0.96f, animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f))) togetherWith (fadeOut(tween(140)) + scaleOut(targetScale = 1.03f, animationSpec = spring(dampingRatio = 0.8f, stiffness = 460f))) },
             label = "tab_content_transition",
             modifier = Modifier
                 .fillMaxSize()
@@ -341,7 +341,7 @@ fun ScheduleScreen(
                         ) {
                             AnimatedContent(
                                 targetState = dayHeaderTitle,
-                                transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(120)) },
+                                transitionSpec = { (fadeIn(tween(220)) + scaleIn(initialScale = 0.94f, animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f))) togetherWith (fadeOut(tween(120)) + scaleOut(targetScale = 1.02f, animationSpec = spring(dampingRatio = 0.8f, stiffness = 460f))) },
                                 label = "day_header_title"
                             ) { title ->
                                 Column(modifier = Modifier.weight(1f, fill = false)) {
