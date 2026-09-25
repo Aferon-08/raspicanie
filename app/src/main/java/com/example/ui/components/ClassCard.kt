@@ -493,7 +493,7 @@ fun ClassCard(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 10.dp, y = 0.dp)
+                    .offset(x = 18.dp, y = 10.dp)
                     .size(154.dp)
             ) {
                 Column(
