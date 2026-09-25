@@ -62,13 +62,12 @@ fun PassesScreen(
         // Header
         Text(
             text = "Пропуски и изменения",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = "Учёт посещаемости и история обновлений расписания",
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
@@ -80,7 +79,7 @@ fun PassesScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Card(
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier.weight(1f)
             ) {
