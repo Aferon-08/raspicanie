@@ -223,7 +223,7 @@ fun ScheduleScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 8.dp),
+                                .padding(horizontal = 20.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -234,7 +234,7 @@ fun ScheduleScreen(
                             ) {
                                 Text(
                                     text = "Расписание",
-                                    fontSize = 32.sp,
+                                    fontSize = 28.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -251,8 +251,8 @@ fun ScheduleScreen(
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(RoundedCornerShape(18.dp))
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(15.dp))
                                     .background(MaterialTheme.colorScheme.primaryContainer)
                                     .clickable { viewModel.selectTab(BottomNavTab.PROFILE) }
                             ) {
@@ -267,7 +267,7 @@ fun ScheduleScreen(
                                         imageVector = Icons.Outlined.Groups,
                                         contentDescription = "Группа",
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(26.dp)
+                                        modifier = Modifier.size(23.dp)
                                     )
                                 }
                             }
@@ -300,7 +300,7 @@ fun ScheduleScreen(
                                 Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(
                                         text = title,
-                                    fontSize = 22.sp,
+                                    fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -318,7 +318,7 @@ fun ScheduleScreen(
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
                                         text = pairsWord,
-                                        fontSize = 15.sp,
+                                        fontSize = 14.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -338,72 +338,59 @@ fun ScheduleScreen(
 
                         val cancelledToggleColor by animateColorAsState(
                             targetValue = if (uiState.showCancelledClasses) {
-                                MaterialTheme.colorScheme.primaryContainer
+                                MaterialTheme.colorScheme.surfaceContainer
                             } else {
                                 MaterialTheme.colorScheme.errorContainer
                             },
-                            animationSpec = tween(320),
+                            animationSpec = tween(260),
                             label = "cancelled_toggle_icon_color"
                         )
                         val cancelledToggleRotation by animateFloatAsState(
-                            targetValue = if (uiState.showCancelledClasses) 0f else -12f,
-                            animationSpec = spring(
-                                dampingRatio = 0.7f,
-                                stiffness = 500f
-                            ),
+                            targetValue = if (uiState.showCancelledClasses) 0f else -10f,
+                            animationSpec = spring(dampingRatio = 0.7f, stiffness = 500f),
                             label = "cancelled_toggle_icon_rotation"
                         )
 
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .clip(RoundedCornerShape(20.dp))
+                                .padding(horizontal = 20.dp, vertical = 5.dp)
+                                .clip(RoundedCornerShape(16.dp))
                                 .background(MaterialTheme.colorScheme.surfaceContainer)
-                                .padding(start = 10.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
                                 .animateContentSize(animationSpec = spring()),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(RoundedCornerShape(13.dp))
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(10.dp))
                                     .background(cancelledToggleColor)
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.EventBusy,
-                                    contentDescription = null,
+                                    contentDescription = "Отменённые занятия",
                                     tint = if (uiState.showCancelledClasses) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                     } else {
                                         MaterialTheme.colorScheme.onErrorContainer
                                     },
                                     modifier = Modifier
-                                        .size(20.dp)
+                                        .size(18.dp)
                                         .rotate(cancelledToggleRotation)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(9.dp))
 
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Отменённые занятия",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = if (uiState.showCancelledClasses) {
-                                        "Показывать в расписании"
-                                    } else {
-                                        "Скрыты из расписания"
-                                    },
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Text(
+                                text = "Отменённые",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
 
                             Switch(
                                 checked = uiState.showCancelledClasses,
@@ -417,8 +404,6 @@ fun ScheduleScreen(
                                 )
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(12.dp))
 
                         // 4. Classes List
                         if (dayEvents.isEmpty()) {
