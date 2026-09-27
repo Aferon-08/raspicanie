@@ -233,9 +233,6 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun switchGroup(groupId: String) {
         val group = repository.switchGroup(groupId) ?: return
-        viewModelScope.launch {
-            repository.clearChangeLog()
-        }
         _uiState.value = _uiState.value.copy(
             groupId = group.id,
             groupTitle = group.title,
@@ -244,7 +241,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             savedGroups = repository.getSavedGroups(),
             syncFeedback = null
         )
-        refreshSchedule()
+        viewModelScope.launch {
+            repository.clearChangeLog()
+            refreshSchedule()
+        }
     }
 
     fun addSavedGroup(title: String, url: String) {
