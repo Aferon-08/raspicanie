@@ -8,7 +8,6 @@ import java.util.TimeZone
 
 object IcsParser {
 
-    private val moskowTimeZone: TimeZone = TimeZone.getTimeZone("Europe/Moscow")
 
     /**
      * Parses standard iCalendar string (.ics) into a list of ClassEvent items.
@@ -26,6 +25,7 @@ object IcsParser {
         var currentStatus = ""
         var startMillis: Long? = null
         var endMillis: Long? = null
+        var calendarTimeZone: TimeZone = TimeZone.getDefault()
 
         for (line in unfoldedLines) {
             val trimmed = line.trim()
@@ -79,7 +79,15 @@ object IcsParser {
                 continue
             }
 
-            if (!inEvent) continue
+            if (!inEvent) {
+                if (trimmed.startsWith("X-WR-TIMEZONE:", ignoreCase = true)) {
+                    val zoneId = trimmed.substringAfter(':').trim()
+                    if (zoneId.isNotBlank()) {
+                        calendarTimeZone = TimeZone.getTimeZone(zoneId)
+                    }
+                }
+                continue
+            }
 
             val colonIdx = line.indexOf(':')
             if (colonIdx == -1) continue
@@ -100,8 +108,8 @@ object IcsParser {
                 "LOCATION" -> currentLocation = value
                 "URL" -> currentUrl = value
                 "STATUS" -> currentStatus = value
-                "DTSTART" -> startMillis = parseIcsDateTime(keyPart, value)
-                "DTEND" -> endMillis = parseIcsDateTime(keyPart, value)
+                "DTSTART" -> startMillis = parseIcsDateTime(keyPart, value, calendarTimeZone)
+                "DTEND" -> endMillis = parseIcsDateTime(keyPart, value, calendarTimeZone)
             }
         }
 
@@ -125,7 +133,7 @@ object IcsParser {
         return result
     }
 
-    private fun parseIcsDateTime(keyPart: String, value: String): Long? {
+    private fun parseIcsDateTime(keyPart: String, value: String, fallbackTimeZone: TimeZone): Long? {
         val cleanValue = value.trim()
         if (cleanValue.isEmpty()) return null
 
@@ -150,7 +158,7 @@ object IcsParser {
         if (cleanValue.contains("T")) {
             val pattern = if (cleanValue.length >= 15) "yyyyMMdd'T'HHmmss" else "yyyyMMdd'T'HHmm"
             val format = SimpleDateFormat(pattern, Locale.US).apply {
-                timeZone = specifiedTimeZone ?: moskowTimeZone
+                timeZone = specifiedTimeZone ?: fallbackTimeZone
             }
             return runCatching { format.parse(cleanValue.substring(0, pattern.length.coerceAtMost(cleanValue.length)))?.time }.getOrNull()
         }
