@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.DecelerateEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
@@ -182,19 +183,16 @@ private fun GearCluster(
             entranceRotation.snapTo(0f)
             entranceRotation.animateTo(
                 targetValue = 360f,
-                animationSpec = if (animationDurationMillis >= 1500) {
-                    keyframes {
-                        // Начинаем с уже заметной угловой скорости, как будто
-                        // шестерёнки крутились ещё до появления карточки.
-                        110f at (animationDurationMillis * 0.12f).toInt()
-                        360f at animationDurationMillis
+                animationSpec = tween(
+                    durationMillis = animationDurationMillis,
+                    easing = if (animationDurationMillis >= 1500) {
+                        // Для учебный день → учебный день сразу задаём высокую
+                        // начальную скорость и затем непрерывно замедляемся.
+                        DecelerateEasing
+                    } else {
+                        FastOutSlowInEasing
                     }
-                } else {
-                    tween(
-                        durationMillis = animationDurationMillis,
-                        easing = FastOutSlowInEasing
-                    )
-                }
+                )
             )
         }
     }
