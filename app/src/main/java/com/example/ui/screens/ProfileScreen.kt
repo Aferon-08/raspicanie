@@ -5,6 +5,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -603,15 +605,24 @@ private fun SavedGroupsCarousel(
                 horizontalArrangement = Arrangement.Center
             ) {
                 groups.forEachIndexed { index, _ ->
+                    val isSelected = index == selectedIndex
+                    val indicatorSize by animateDpAsState(
+                        targetValue = if (isSelected) 18.dp else 7.dp,
+                        animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f),
+                        label = "group_indicator_size_$index"
+                    )
+                    val indicatorColor by animateColorAsState(
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outlineVariant,
+                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 500f),
+                        label = "group_indicator_color_$index"
+                    )
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 3.dp)
-                            .size(if (index == selectedIndex) 18.dp else 7.dp)
+                            .size(indicatorSize)
                             .clip(CircleShape)
-                            .background(
-                                if (index == selectedIndex) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.outlineVariant
-                            )
+                            .background(indicatorColor)
                     )
                 }
             }
