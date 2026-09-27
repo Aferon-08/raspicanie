@@ -9,6 +9,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -102,12 +104,41 @@ fun ProfileScreen(
     AnimatedContent(
         targetState = groupManagerExpanded,
         transitionSpec = {
-            (fadeIn(animationSpec = spring(dampingRatio = 0.78f, stiffness = 380f)) +
-                scaleIn(initialScale = 0.965f, animationSpec = spring(dampingRatio = 0.78f, stiffness = 380f)))
-                .togetherWith(
-                    fadeOut(animationSpec = spring(dampingRatio = 0.82f, stiffness = 460f)) +
-                        scaleOut(targetScale = 1.015f, animationSpec = spring(dampingRatio = 0.82f, stiffness = 460f))
-                )
+            if (targetState) {
+                (fadeIn(animationSpec = spring(dampingRatio = 0.82f, stiffness = 360f)) +
+                    slideInVertically(
+                        initialOffsetY = { height -> height / 3 },
+                        animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
+                    ) +
+                    scaleIn(
+                        initialScale = 0.82f,
+                        animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
+                    ))
+                    .togetherWith(
+                        fadeOut(animationSpec = spring(dampingRatio = 0.88f, stiffness = 520f)) +
+                            scaleOut(
+                                targetScale = 0.88f,
+                                animationSpec = spring(dampingRatio = 0.82f, stiffness = 520f)
+                            )
+                    )
+            } else {
+                (fadeIn(animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f)) +
+                    scaleIn(
+                        initialScale = 0.90f,
+                        animationSpec = spring(dampingRatio = 0.76f, stiffness = 420f)
+                    ))
+                    .togetherWith(
+                        fadeOut(animationSpec = spring(dampingRatio = 0.88f, stiffness = 500f)) +
+                            slideOutVertically(
+                                targetOffsetY = { height -> height / 4 },
+                                animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f)
+                            ) +
+                            scaleOut(
+                                targetScale = 0.92f,
+                                animationSpec = spring(dampingRatio = 0.80f, stiffness = 420f)
+                            )
+                    )
+            }
         },
         label = "profile_group_mode",
         modifier = modifier.fillMaxSize()
