@@ -127,7 +127,6 @@ fun ScheduleScreen(
     val context = LocalContext.current
     // One shared trigger is hoisted above LazyColumn so gear animations do not
     // restart merely because cards leave/re-enter the viewport.
-    var gearAnimationTrigger by remember { mutableStateOf(0) }
     var gearAnimationStartTimeMillis by remember { mutableStateOf(0L) }
     var gearAnimationFast by remember { mutableStateOf(true) }
     var previousDayHadEvents by remember { mutableStateOf(false) }
