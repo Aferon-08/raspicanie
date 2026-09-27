@@ -212,10 +212,12 @@ fun SubgroupClassCard(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Подгруппа " + subgroup.number,
+                                text = subgroup.teacher.ifBlank { "Преподаватель не указан" },
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = secondaryColor
+                                color = secondaryColor,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
@@ -228,11 +230,10 @@ fun SubgroupClassCard(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = subgroup.teacher.ifBlank { "Преподаватель не указан" },
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = primaryColor,
-                                    maxLines = 2,
+                                    text = "Подгруппа " + subgroup.number,
+                                    fontSize = 12.sp,
+                                    color = secondaryColor,
+                                    maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
