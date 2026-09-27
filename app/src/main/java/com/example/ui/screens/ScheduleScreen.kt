@@ -406,68 +406,91 @@ fun ScheduleScreen(
                         // Cancelled-class filter is now a compact animated action in the bottom bar.
 
                         // 4. Classes List
-                        if (dayEventsIncludingCancelled.isEmpty()) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f)
-                                    .padding(32.dp)
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = "Занятий нет",
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = "В этот день у группы нет запланированных пар",
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        } else {
-                            AnimatedContent(
-                                targetState = uiState.selectedDateMillis to dayEventsIncludingCancelled,
-                                contentKey = { state -> state.first },
-                                transitionSpec = {
-                                    val forward = targetState.first >= initialState.first
-                                    val initialHasEvents = initialState.second.isNotEmpty()
-                                    val targetHasEvents = targetState.second.isNotEmpty()
-                                    if (!initialHasEvents && targetHasEvents) {
-                                        fadeIn(tween(180)) togetherWith fadeOut(tween(120))
-                                    } else if (initialHasEvents && !targetHasEvents) {
-                                        fadeIn(tween(180)) togetherWith fadeOut(tween(120))
-                                    } else {
+                        AnimatedContent(
+                            targetState = dayEventsIncludingCancelled,
+                            contentKey = { events -> events.isNotEmpty() },
+                            transitionSpec = {
+                                val initialHasEvents = initialState.isNotEmpty()
+                                val targetHasEvents = targetState.isNotEmpty()
+
+                                when {
+                                    !initialHasEvents && targetHasEvents -> {
                                         (
-                                            slideInHorizontally(
+                                            slideInVertically(
                                                 animationSpec = spring(
-                                                    dampingRatio = 0.82f,
-                                                    stiffness = 380f
-                                                )
-                                            ) { fullWidth -> if (forward) fullWidth else -fullWidth } +
-                                                fadeIn(tween(180))
-                                        ) togetherWith (
-                                            slideOutHorizontally(
-                                                animationSpec = spring(
-                                                    dampingRatio = 0.86f,
+                                                    dampingRatio = 0.78f,
                                                     stiffness = 360f
                                                 )
-                                            ) { fullWidth -> if (forward) -fullWidth / 3 else fullWidth / 3 } +
-                                                fadeOut(tween(140))
+                                            ) { fullHeight -> fullHeight } +
+                                                fadeIn(tween(180)) +
+                                                scaleIn(
+                                                    initialScale = 0.96f,
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.78f,
+                                                        stiffness = 380f
+                                                    )
+                                                )
+                                        ) togetherWith fadeOut(tween(120))
+                                    }
+
+                                    initialHasEvents && !targetHasEvents -> {
+                                        fadeIn(tween(180)) togetherWith (
+                                            slideOutVertically(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.82f,
+                                                    stiffness = 360f
+                                                )
+                                            ) { fullHeight -> fullHeight } +
+                                                fadeOut(tween(140)) +
+                                                scaleOut(
+                                                    targetScale = 0.96f,
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.82f,
+                                                        stiffness = 380f
+                                                    )
+                                                )
                                         )
-                                    )
-                                },
-                                label = "day_classes_transition",
-                                modifier = Modifier.weight(1f)
-                            ) { state ->
-                                val events = state.second
+                                    }
+
+                                    else -> {
+                                        fadeIn(tween(140)) togetherWith fadeOut(tween(100))
+                                    }
+                                }
+                            },
+                            label = "day_classes_content_transition",
+                            modifier = Modifier.weight(1f)
+                        ) { events ->
+                            if (events.isEmpty()) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(32.dp)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "Занятий нет",
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "В этот день у группы нет запланированных пар",
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            } else {
                                 LazyColumn(
                                     state = classListState,
-                                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
+                                    contentPadding = PaddingValues(
+                                        start = 20.dp,
+                                        end = 20.dp,
+                                        top = 4.dp,
+                                        bottom = 24.dp
+                                    ),
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     items(events, key = { it.id }) { event ->
@@ -476,16 +499,28 @@ fun ScheduleScreen(
                                         AnimatedVisibility(
                                             visible = visible,
                                             enter = expandVertically(
-                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.72f,
+                                                    stiffness = 420f
+                                                )
                                             ) + fadeIn(tween(260)) + scaleIn(
                                                 initialScale = 0.92f,
-                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.72f,
+                                                    stiffness = 420f
+                                                )
                                             ),
                                             exit = shrinkVertically(
-                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.72f,
+                                                    stiffness = 420f
+                                                )
                                             ) + fadeOut(tween(180)) + scaleOut(
                                                 targetScale = 0.92f,
-                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.72f,
+                                                    stiffness = 420f
+                                                )
                                             )
                                         ) {
                                             Box(
@@ -511,6 +546,7 @@ fun ScheduleScreen(
                                 }
                             }
                         }
+
                     }
                 }
             }
