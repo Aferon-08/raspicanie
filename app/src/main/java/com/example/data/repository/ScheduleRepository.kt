@@ -104,10 +104,11 @@ class ScheduleRepository(
         prefs.edit().putStringSet(PREF_MISSED_CLASSES, ids).apply()
     }
 
-    fun updateSettings(newGroupId: String, newCustomUrl: String?, newLeadTimeMinutes: Int) {
+    fun updateSettings(newGroupId: String, newCustomUrl: String?, newLeadTimeMinutes: Int, newGroupTitle: String? = null) {
         groupId = newGroupId
         customUrl = newCustomUrl
         leadTimeMinutes = newLeadTimeMinutes
+        newGroupTitle?.let { groupTitle = it }
     }
 
     fun getCalendarUrl(): String {
