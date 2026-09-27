@@ -359,7 +359,10 @@ fun ProfileScreen(
             onDismiss = { groupDialog = null },
             onSave = { title, url ->
                 when (dialog) {
-                    GroupDialogState.Create -> onAddGroup(title, url)
+                    GroupDialogState.Create -> {
+                        groupManagerExpanded = true
+                        onAddGroup(title, url)
+                    }
                     is GroupDialogState.Edit -> onEditGroup(dialog.group.id, title, url)
                 }
                 groupDialog = null
