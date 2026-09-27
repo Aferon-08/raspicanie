@@ -669,7 +669,7 @@ fun ClassCard(
                 } else {
                     MaterialTheme.colorScheme.tertiary.copy(alpha = 0.78f)
                 },
-                animationTrigger = gearAnimationTrigger,
+                animationStartTimeMillis = gearAnimationStartTimeMillis,
                 animationDurationMillis = gearAnimationDurationMillis,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
