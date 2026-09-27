@@ -17,7 +17,9 @@ data class ClassEvent(
     val isCancelled: Boolean = false,
     val hasChanges: Boolean = false,
     val changeDetails: String? = null,
-    val rawSummary: String = ""
+    val rawSummary: String = "",
+    /** Explicit subgroup rows used when several parallel events are presented as one lesson. */
+    val subgroups: List<SubgroupInfo> = emptyList()
 ) {
     fun getStatus(currentTimeMillis: Long = System.currentTimeMillis()): ClassStatus = when {
         isCancelled -> ClassStatus.CANCELLED
@@ -97,6 +99,8 @@ data class ClassEvent(
 
     val displaySubgroups: List<SubgroupInfo>
         get() {
+            if (subgroups.isNotEmpty()) return subgroups
+
             val list = mutableListOf<SubgroupInfo>()
             if (description.contains("подгрупп", ignoreCase = true) || description.contains("ауд", ignoreCase = true)) {
                 val lines = description.lines().filter { it.isNotBlank() }
