@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,7 +23,7 @@ import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -34,10 +35,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +76,23 @@ fun ClassDetailDialog(
     onToggleReminder: (ClassEvent) -> Unit
 ) {
     var liveTimeMillis by remember(event.id) { mutableLongStateOf(currentTimeMillis) }
+    var dialogVisible by remember(event.id) { mutableStateOf(false) }
+
+    fun dismissWithAnimation() {
+        if (!dialogVisible) return
+        dialogVisible = false
+    }
+
+    LaunchedEffect(event.id) {
+        dialogVisible = true
+    }
+
+    LaunchedEffect(dialogVisible) {
+        if (!dialogVisible) {
+            delay(220L)
+            onDismiss()
+        }
+    }
 
     LaunchedEffect(event.id) {
         while (true) {
@@ -97,11 +124,26 @@ fun ClassDetailDialog(
     val endStr = ScheduleTimeFormatter.formatTime(event.endTimeMillis, is24HourFormat)
     val dateStr = ScheduleTimeFormatter.formatDate(event.startTimeMillis, "EEEE, d MMMM yyyy").replaceFirstChar { it.uppercase() }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(28.dp),
-        title = {
+    BasicAlertDialog(
+        onDismissRequest = { dismissWithAnimation() }
+    ) {
+        AnimatedVisibility(
+            visible = dialogVisible,
+            enter = fadeIn(tween(180)) +
+                scaleIn(initialScale = 0.78f, animationSpec = tween(260)) +
+                slideInVertically(initialOffsetY = { it / 6 }, animationSpec = tween(260)),
+            exit = fadeOut(tween(150)) +
+                scaleOut(targetScale = 0.82f, animationSpec = tween(190)) +
+                slideOutVertically(targetOffsetY = { it / 6 }, animationSpec = tween(190))
+        ) {
+            androidx.compose.material3.Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+
             Column {
                 Box(
                     modifier = Modifier
@@ -139,7 +181,7 @@ fun ClassDetailDialog(
                 )
             }
         },
-        text = {
+        
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -233,7 +275,7 @@ fun ClassDetailDialog(
                 }
             }
         },
-        confirmButton = {
+        
             if (status != ClassStatus.COMPLETED && status != ClassStatus.CANCELLED) {
                 Button(
                     onClick = {
@@ -266,12 +308,16 @@ fun ClassDetailDialog(
                 }
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
+        
+            TextButton(onClick = { dismissWithAnimation() }) {
                 Text("Закрыть")
             }
         }
+    )                }
+            }
+        }
     )
+
 }
 
 @Composable
