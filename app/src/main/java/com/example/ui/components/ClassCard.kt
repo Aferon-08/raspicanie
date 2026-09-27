@@ -149,7 +149,7 @@ private fun GearCluster(
     isOngoing: Boolean,
     largeColor: Color,
     smallColor: Color,
-    animationTrigger: Int = 0,
+    animationStartTimeMillis: Long = 0L,
     animationDurationMillis: Int = 760,
     modifier: Modifier = Modifier
 ) {
@@ -177,23 +177,41 @@ private fun GearCluster(
 
     val entranceRotation = remember { Animatable(0f) }
 
-    LaunchedEffect(animationTrigger) {
-        if (animationTrigger > 0) {
-            entranceRotation.snapTo(0f)
-            entranceRotation.animateTo(
-                targetValue = 360f,
-                animationSpec = tween(
-                    durationMillis = animationDurationMillis,
-                    easing = if (animationDurationMillis >= 1500) {
-                        // Для учебный день → учебный день сразу задаём высокую
-                        // начальную скорость и затем непрерывно замедляемся.
-                        androidx.compose.animation.core.CubicBezierEasing(0.15f, 0f, 0.2f, 1f)
-                    } else {
-                        FastOutSlowInEasing
-                    }
-                )
-            )
+    LaunchedEffect(animationStartTimeMillis) {
+        if (animationStartTimeMillis <= 0L) return@LaunchedEffect
+
+        val easing = if (animationDurationMillis >= 1500) {
+            // Учебный день → учебный день: высокая начальная скорость
+            // и непрерывное замедление до полной остановки.
+            androidx.compose.animation.core.CubicBezierEasing(0.15f, 0f, 0.2f, 1f)
+        } else {
+            FastOutSlowInEasing
         }
+
+        val elapsedMillis = (System.currentTimeMillis() - animationStartTimeMillis)
+            .coerceAtLeast(0L)
+        val durationMillis = animationDurationMillis.toLong()
+
+        if (elapsedMillis >= durationMillis) {
+            entranceRotation.snapTo(360f)
+            return@LaunchedEffect
+        }
+
+        // Карточка может появиться в LazyColumn уже после начала общей
+        // анимации. Сразу ставим её в актуальную фазу, а не запускаем
+        // вращение заново с нулевого угла.
+        val progress = (elapsedMillis.toFloat() / durationMillis).coerceIn(0f, 1f)
+        val currentRotation = easing.transform(progress) * 360f
+        entranceRotation.snapTo(currentRotation)
+
+        val remainingMillis = (durationMillis - elapsedMillis).toInt().coerceAtLeast(1)
+        entranceRotation.animateTo(
+            targetValue = 360f,
+            animationSpec = tween(
+                durationMillis = remainingMillis,
+                easing = LinearEasing
+            )
+        )
     }
 
     Box(modifier = modifier) {
