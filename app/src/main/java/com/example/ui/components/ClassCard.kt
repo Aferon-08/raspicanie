@@ -7,6 +7,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.RepeatMode
@@ -181,7 +182,7 @@ private fun GearCluster(
                 targetValue = 360f,
                 animationSpec = tween(
                     durationMillis = 760,
-                    easing = LinearEasing
+                    easing = FastOutSlowInEasing
                 )
             )
         }
