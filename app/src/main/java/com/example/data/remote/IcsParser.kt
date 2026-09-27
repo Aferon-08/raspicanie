@@ -166,7 +166,7 @@ object IcsParser {
         // Format 3: 20260925 (Date only)
         if (cleanValue.length == 8) {
             val format = SimpleDateFormat("yyyyMMdd", Locale.US).apply {
-                timeZone = specifiedTimeZone ?: moskowTimeZone
+                timeZone = specifiedTimeZone ?: fallbackTimeZone
             }
             return runCatching { format.parse(cleanValue)?.time }.getOrNull()
         }
