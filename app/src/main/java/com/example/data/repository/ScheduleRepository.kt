@@ -273,11 +273,13 @@ class ScheduleRepository(
         }
     }
 
-    suspend fun syncSchedule(): SyncResult {
+    suspend fun syncSchedule(expectedGroupId: String = activeGroupId() ?: groupId): SyncResult {
+        if (activeGroupId() != expectedGroupId) return SyncResult.Success
         val url = getCalendarUrl()
         Log.d("ScheduleRepository", "Syncing schedule from $url")
 
         val remoteResult = remoteDataSource.fetchCalendarIcs(url)
+        if (activeGroupId() != expectedGroupId) return SyncResult.Success
         val icsString: String
         var isFallback = false
         var fallbackMsg = ""
@@ -301,6 +303,7 @@ class ScheduleRepository(
         }
 
         val parsedEvents = IcsParser.parse(icsString)
+        if (activeGroupId() != expectedGroupId) return SyncResult.Success
         if (parsedEvents.isEmpty() && !isFallback) {
             return SyncResult.Error("Календарь пуст или не содержит занятий")
         }
@@ -326,6 +329,7 @@ class ScheduleRepository(
         updateActiveGroupStats(confirmedToday)
 
         val activeId = activeGroupId() ?: groupId
+        if (activeId != expectedGroupId) return SyncResult.Success
         val groupChangedSinceLastSync = prefs.getString(PREF_LAST_SYNCED_GROUP_ID, null) != activeId
         val oldEvents = if (groupChangedSinceLastSync) {
             emptyMap()
@@ -346,10 +350,12 @@ class ScheduleRepository(
         } else {
             diff.removedEventIds
         }
+        if (activeGroupId() != expectedGroupId) return SyncResult.Success
         if (alarmsToCancel.isNotEmpty()) {
             notificationScheduler.cancelAlarms(alarmsToCancel)
         }
 
+        if (activeGroupId() != expectedGroupId) return SyncResult.Success
         database.scheduleDao().updateScheduleWithDiff(diff.events.map(ScheduleEntity::fromDomain), newChanges)
         prefs.edit().putString(PREF_LAST_SYNCED_GROUP_ID, activeId).apply()
 
