@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.provider.Settings
+import android.net.Uri
 import android.util.Log
 import com.example.data.model.ClassEvent
 import com.example.receiver.AlarmReceiver
@@ -23,6 +25,18 @@ class NotificationScheduler(private val context: Context) {
         private const val PREF_ENABLED_IDS = "enabled_event_ids"
         const val REMINDER_LEAD_TIME_MINUTES = 5
     }
+
+    fun canScheduleExactAlarms(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+
+    fun exactAlarmSettingsIntent(): Intent? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !canScheduleExactAlarms()) {
+            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                data = Uri.parse("package:${context.packageName}")
+            }
+        } else {
+            null
+        }
 
     fun isReminderEnabled(eventId: String): Boolean =
         prefs.getStringSet(PREF_ENABLED_IDS, emptySet())?.contains(eventId) == true
@@ -151,5 +165,16 @@ class NotificationScheduler(private val context: Context) {
 
     fun cancelAlarms(events: List<ClassEvent>) {
         events.forEach { cancelAlarm(it.id) }
+    }
+
+    fun cancelAlarms(eventIds: Set<String>) {
+        eventIds.forEach { cancelAlarm(it) }
+
+        if (eventIds.isNotEmpty()) {
+            val enabled = getEnabledReminderIds().toMutableSet()
+            if (enabled.removeAll(eventIds)) {
+                prefs.edit().putStringSet(PREF_ENABLED_IDS, enabled).apply()
+            }
+        }
     }
 }
