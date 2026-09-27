@@ -402,7 +402,8 @@ class ScheduleRepository(
     fun toggleReminder(event: ClassEvent): Boolean =
         notificationScheduler.toggleReminder(event)
 
-    suspend fun clearChangeLog() {
+    suspend fun clearChangeLog(expectedGroupId: String? = null) {
+        if (expectedGroupId != null && activeGroupId() != expectedGroupId) return
         database.scheduleDao().clearChanges()
     }
 }
