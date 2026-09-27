@@ -246,7 +246,7 @@ fun ClassCard(
     currentTimeMillis: Long = System.currentTimeMillis(),
     is24HourFormat: Boolean = true,
     forceOngoingAnimation: Boolean = false,
-    gearAnimationTrigger: Int = 0,
+    gearAnimationStartTimeMillis: Long = 0L,
     gearAnimationDurationMillis: Int = 760,
     onCardClick: (ClassEvent) -> Unit,
     modifier: Modifier = Modifier
