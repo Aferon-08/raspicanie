@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -195,7 +196,7 @@ fun ClassDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 520.dp)
-                        .heightIn(max = 700.dp)
+                        .fillMaxHeight()
                         .pointerInput(event.id) {
                             detectVerticalDragGestures(
                                 onVerticalDrag = { change, dragAmount ->
