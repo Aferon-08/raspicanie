@@ -49,6 +49,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -126,86 +128,33 @@ fun ProfileScreen(
             }
 
             item {
-                if (expanded) {
-                    SavedGroupsCarousel(
-                        groups = uiState.savedGroups,
-                        activeGroupId = activeGroupUrl,
-                        onGroupSelected = onSwitchGroup,
-                        onAdd = { groupDialog = GroupDialogState.Create },
-                        onEdit = { groupDialog = GroupDialogState.Edit(it) }
-                    )
-                } else {
-                    CurrentGroupCard(
-                        title = uiState.groupTitle,
-                        url = uiState.customUrl ?: ("https://planovo.pro/api/v1/public/groups/" + uiState.groupId + "/calendar.ics"),
-                        confirmedToday = uiState.savedGroups.firstOrNull { it.url == activeGroupUrl }?.confirmedToday ?: 0,
-                        onAddGroup = { groupManagerExpanded = true },
-                        onManageGroups = { groupManagerExpanded = true }
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Card(
-                        shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                        modifier = Modifier.fillMaxWidth().animateContentSize(
-                            animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f)
+                AnimatedContent(
+                    targetState = expanded,
+                    transitionSpec = {
+                        (fadeIn(animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f)) +
+                            scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)))
+                            .togetherWith(
+                                fadeOut(animationSpec = spring(dampingRatio = 0.82f, stiffness = 480f)) +
+                                    scaleOut(targetScale = 1.04f, animationSpec = spring(dampingRatio = 0.82f, stiffness = 480f))
+                            )
+                    },
+                    label = "group_card_transform"
+                ) { showCarousel ->
+                    if (showCarousel) {
+                        SavedGroupsCarousel(
+                            groups = uiState.savedGroups,
+                            activeGroupId = activeGroupUrl,
+                            onGroupSelected = onSwitchGroup,
+                            onAdd = { groupDialog = GroupDialogState.Create },
+                            onEdit = { groupDialog = GroupDialogState.Edit(it) }
                         )
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.size(36.dp).clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-                                ) {
-                                    Icon(Icons.Outlined.Groups, null, tint = MaterialTheme.colorScheme.primary)
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text("Группа и расписание", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            }
-                            Spacer(modifier = Modifier.height(14.dp))
-                            OutlinedTextField(
-                                value = groupTitleInput,
-                                onValueChange = { groupTitleInput = it },
-                                label = { Text("Название группы / курс") },
-                                placeholder = { Text("Например: 2423 УИР · 3 курс") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            OutlinedTextField(
-                                value = groupIdInput,
-                                onValueChange = { groupIdInput = it },
-                                label = { Text("ID группы Planovo (по умолч. 41)") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            OutlinedTextField(
-                                value = customUrlInput,
-                                onValueChange = { customUrlInput = it },
-                                label = { Text("Пользовательский .ics URL (опционально)") },
-                                placeholder = { Text("https://planovo.pro/api/v1/public/groups/41/calendar.ics") },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(modifier = Modifier.height(14.dp))
-                            Button(
-                                onClick = {
-                                    onSaveSettings(
-                                        groupIdInput.trim(),
-                                        customUrlInput.trim().ifEmpty { null },
-                                        selectedLeadTime,
-                                        groupTitleInput.trim()
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Сохранить и обновить")
-                            }
-                        }
+                    } else {
+                        CurrentGroupCard(
+                            title = uiState.groupTitle,
+                            url = uiState.customUrl ?: ("https://planovo.pro/api/v1/public/groups/" + uiState.groupId + "/calendar.ics"),
+                            confirmedToday = uiState.savedGroups.firstOrNull { it.url == activeGroupUrl }?.confirmedToday ?: 0,
+                            onManageGroups = { groupManagerExpanded = true }
+                        )
                     }
                 }
             }
@@ -404,7 +353,6 @@ private fun CurrentGroupCard(
     title: String,
     url: String,
     confirmedToday: Int,
-    onAddGroup: () -> Unit,
     onManageGroups: () -> Unit
 ) {
     Card(
@@ -430,20 +378,22 @@ private fun CurrentGroupCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                IconButton(
+                    onClick = onManageGroups,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = "Добавить группу",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(url, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
-            Spacer(modifier = Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = onAddGroup, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Outlined.Add, null)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Добавить группу")
-                }
-                OutlinedButton(onClick = onManageGroups, modifier = Modifier.weight(0.65f)) {
-                    Text("Все группы")
-                }
-            }
         }
     }
 }
@@ -681,45 +631,63 @@ private fun GroupEditorDialog(
     var title by remember(existing?.id) { mutableStateOf(existing?.title ?: "") }
     var url by remember(existing?.id) { mutableStateOf(existing?.url ?: "") }
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (existing == null) "Добавить группу" else "Редактировать группу") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        ) {
+            Column(modifier = Modifier.padding(22.dp)) {
+                Text(
+                    if (existing == null) "Добавить группу" else "Редактировать группу",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text("Название") },
                     placeholder = { Text("Например: 2423 УИР") },
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(10.dp))
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
                     label = { Text("Ссылка на .ics") },
                     placeholder = { Text("https://.../calendar.ics") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onSave(title, url) },
-                enabled = title.isNotBlank() && url.startsWith("http")
-            ) {
-                Text("Сохранить")
-            }
-        },
-        dismissButton = {
-            Row {
-                if (onDelete != null) {
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Outlined.DeleteOutline, "Удалить группу", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(18.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (onDelete != null) {
+                        TextButton(onClick = onDelete) {
+                            Text("Удалить")
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = onDismiss) { Text("Отмена") }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Button(
+                        onClick = { onSave(title, url) },
+                        enabled = title.isNotBlank() && url.startsWith("http")
+                    ) {
+                        Text("Сохранить")
                     }
                 }
-                TextButton(onClick = onDismiss) { Text("Отмена") }
             }
         }
-    )
+    }
 }
