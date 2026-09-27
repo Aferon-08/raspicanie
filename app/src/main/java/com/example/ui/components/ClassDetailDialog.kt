@@ -296,7 +296,7 @@ fun ClassDetailDialog(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f, fill = true)
+                                .weight(1f, fill = false)
                                 .verticalScroll(rememberScrollState())
                         ) {
                             if (event.hasChanges && !event.changeDetails.isNullOrBlank()) {
@@ -384,7 +384,7 @@ fun ClassDetailDialog(
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 0.dp),
+                                    .padding(bottom = 20.dp),
                                 colors = if (reminderEnabled) {
                                     ButtonDefaults.buttonColors(
                                         containerColor =
