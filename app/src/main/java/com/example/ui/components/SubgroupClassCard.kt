@@ -183,57 +183,21 @@ fun SubgroupClassCard(
                             .padding(horizontal = 13.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    if (isOngoing) {
-                                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f)
-                                    } else {
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    }
-                                )
-                        ) {
-                            Text(
-                                text = subgroup.number,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isOngoing) {
-                                    MaterialTheme.colorScheme.onPrimary
-                                } else {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(11.dp))
-
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = subgroup.teacher.ifBlank { "Преподаватель не указан" },
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = secondaryColor,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Outlined.Person,
                                     contentDescription = null,
                                     tint = secondaryColor,
-                                    modifier = Modifier.size(17.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(7.dp))
                                 Text(
-                                    text = "Подгруппа " + subgroup.number,
-                                    fontSize = 12.sp,
-                                    color = secondaryColor,
-                                    maxLines = 1,
+                                    text = subgroup.teacher.ifBlank { "Преподаватель не указан" },
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = primaryColor,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
