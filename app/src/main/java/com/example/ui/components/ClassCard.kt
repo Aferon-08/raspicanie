@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -181,10 +182,19 @@ private fun GearCluster(
             entranceRotation.snapTo(0f)
             entranceRotation.animateTo(
                 targetValue = 360f,
-                animationSpec = tween(
-                    durationMillis = animationDurationMillis,
-                    easing = FastOutSlowInEasing
-                )
+                animationSpec = if (animationDurationMillis >= 1500) {
+                    keyframes {
+                        // Начинаем с уже заметной угловой скорости, как будто
+                        // шестерёнки крутились ещё до появления карточки.
+                        110f at (animationDurationMillis * 0.12f).toInt()
+                        360f at animationDurationMillis
+                    }
+                } else {
+                    tween(
+                        durationMillis = animationDurationMillis,
+                        easing = FastOutSlowInEasing
+                    )
+                }
             )
         }
     }
