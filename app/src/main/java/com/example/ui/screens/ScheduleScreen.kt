@@ -144,7 +144,6 @@ fun ScheduleScreen(
             // Между двумя учебными днями — заметно более медленное вращение.
             gearAnimationFast = !previousDayHadEvents
             gearAnimationStartTimeMillis = System.currentTimeMillis()
-            gearAnimationTrigger++
         }
         previousDayHadEvents = hasEvents
     }
