@@ -128,6 +128,11 @@ fun ScheduleScreen(
     // One shared trigger is hoisted above LazyColumn so gear animations do not
     // restart merely because cards leave/re-enter the viewport.
     var gearAnimationTrigger by remember { mutableStateOf(0) }
+    var scheduleHasAppeared by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        scheduleHasAppeared = true
+    }
 
     LaunchedEffect(uiState.selectedDateMillis, dayEventsIncludingCancelled.isNotEmpty()) {
         if (dayEventsIncludingCancelled.isNotEmpty()) {
@@ -256,7 +261,24 @@ fun ScheduleScreen(
                     )
                 }
                 BottomNavTab.SCHEDULE -> {
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    AnimatedVisibility(
+                        visible = scheduleHasAppeared,
+                        enter = slideInVertically(
+                            animationSpec = spring(
+                                dampingRatio = 0.82f,
+                                stiffness = 360f
+                            )
+                        ) { fullHeight -> fullHeight / 10 } +
+                            fadeIn(tween(280)) +
+                            scaleIn(
+                                initialScale = 0.97f,
+                                animationSpec = spring(
+                                    dampingRatio = 0.82f,
+                                    stiffness = 380f
+                                )
+                            )
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
                         Row(
                             modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -475,6 +497,7 @@ fun ScheduleScreen(
                                     }
                                 }
                             }
+                        }
                         }
                     }
                 }
