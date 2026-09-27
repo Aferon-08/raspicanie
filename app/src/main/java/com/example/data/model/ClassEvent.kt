@@ -99,7 +99,15 @@ data class ClassEvent(
 
     val displaySubgroups: List<SubgroupInfo>
         get() {
-            if (subgroups.isNotEmpty()) return subgroups
+            if (subgroups.isNotEmpty()) {
+                return subgroups.map { subgroup ->
+                    subgroup.copy(
+                        teacher = subgroup.teacher
+                            .takeIf { it.isNotBlank() && !it.trim().matches(Regex("""(?i)подгруппа\s*\d+""")) }
+                            ?: extractTeacherName()
+                    )
+                }
+            }
 
             val list = mutableListOf<SubgroupInfo>()
             if (description.contains("подгрупп", ignoreCase = true) || description.contains("ауд", ignoreCase = true)) {
@@ -123,6 +131,27 @@ data class ClassEvent(
             }
             return list
         }
+
+    private fun extractTeacherName(): String {
+        if (teacher.isNotBlank() && !teacher.trim().matches(Regex("""(?i)подгруппа\s*\d+"""))) {
+            return teacher.trim()
+        }
+
+        val descriptionTeacher = Regex(
+            """(?im)^(?:Преподаватель|Педагог|Тренер|Учитель|Инструктор|Ведущий)\s*:\s*(.+)$"""
+        ).find(description)?.groupValues?.getOrNull(1)?.trim()
+        if (!descriptionTeacher.isNullOrBlank()) return descriptionTeacher
+
+        Regex("""\(([^()]+)\)\s*$""").find(rawSummary)?.groupValues?.getOrNull(1)?.trim()
+            ?.takeIf { it.split(Regex("""\s+""")).size in 2..4 }
+            ?.let { return it }
+
+        Regex("""\s[-–—:]\s*(.+)$""").find(rawSummary)?.groupValues?.getOrNull(1)?.trim()
+            ?.takeIf { it.split(Regex("""\s+""")).size in 2..4 }
+            ?.let { return it }
+
+        return ""
+    }
 }
 
 data class ScheduleChange(
