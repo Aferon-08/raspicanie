@@ -3,6 +3,7 @@ package com.example.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -146,6 +147,7 @@ private fun GearCluster(
     isOngoing: Boolean,
     largeColor: Color,
     smallColor: Color,
+    animationTrigger: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val transition = rememberInfiniteTransition(label = "gear_rotation")
@@ -170,12 +172,27 @@ private fun GearCluster(
         label = "small_gear_rotation"
     )
 
+    val entranceRotation = remember { Animatable(0f) }
+
+    LaunchedEffect(animationTrigger) {
+        if (animationTrigger > 0) {
+            entranceRotation.snapTo(0f)
+            entranceRotation.animateTo(
+                targetValue = 360f,
+                animationSpec = tween(
+                    durationMillis = 760,
+                    easing = LinearEasing
+                )
+            )
+        }
+    }
+
     Box(modifier = modifier) {
         // Сначала рисуем маленькую шестерёнку: она находится ЗА большой.
         Gear(
             size = 82.dp,
             color = smallColor,
-            rotation = smallRotation,
+            rotation = smallRotation - entranceRotation.value * 1.35f,
             teeth = 10,
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -186,7 +203,7 @@ private fun GearCluster(
         Gear(
             size = 154.dp,
             color = largeColor,
-            rotation = largeRotation,
+            rotation = largeRotation + entranceRotation.value,
             teeth = 13,
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -202,6 +219,7 @@ fun ClassCard(
     currentTimeMillis: Long = System.currentTimeMillis(),
     is24HourFormat: Boolean = true,
     forceOngoingAnimation: Boolean = false,
+    gearAnimationTrigger: Int = 0,
     onCardClick: (ClassEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -623,6 +641,7 @@ fun ClassCard(
                 } else {
                     MaterialTheme.colorScheme.tertiary.copy(alpha = 0.78f)
                 },
+                animationTrigger = gearAnimationTrigger,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .offset(x = 12.dp, y = 8.dp)
