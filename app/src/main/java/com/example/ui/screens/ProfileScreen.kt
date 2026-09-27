@@ -92,7 +92,7 @@ fun ProfileScreen(
     onDeleteGroup: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var groupManagerExpanded by remember { mutableStateOf(false) }
+    var groupManagerExpanded by remember { mutableStateOf(true) }
     var groupIdInput by remember(uiState.groupId) { mutableStateOf(uiState.groupId) }
     var groupTitleInput by remember(uiState.groupTitle) { mutableStateOf(uiState.groupTitle) }
     var customUrlInput by remember(uiState.customUrl) { mutableStateOf(uiState.customUrl ?: "") }
