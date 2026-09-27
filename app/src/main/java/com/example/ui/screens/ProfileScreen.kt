@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -478,6 +479,7 @@ private fun SavedGroupsCarousel(
         mutableIntStateOf(groups.indexOfFirst { it.url == activeGroupId }.coerceAtLeast(0))
     }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    var isDragging by remember { mutableStateOf(false) }
     val density = LocalDensity.current
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -512,6 +514,9 @@ private fun SavedGroupsCarousel(
                     .height(238.dp)
                     .pointerInput(groups, selectedIndex) {
                         detectHorizontalDragGestures(
+                            onDragStart = {
+                                isDragging = true
+                            },
                             onDragEnd = {
                                 val threshold = cardWidthPx * 0.20f
                                 val releasedOffset = dragOffset
@@ -525,6 +530,7 @@ private fun SavedGroupsCarousel(
                                         onGroupSelected(groups[selectedIndex].id)
                                     }
                                 }
+                                isDragging = false
                                 dragOffset = 0f
                             },
                             onHorizontalDrag = { _, amount ->
@@ -539,9 +545,32 @@ private fun SavedGroupsCarousel(
                     val group = groups[index]
                     val isCurrent = relative == 0
                     val progress = if (cardWidthPx == 0f) 0f else (dragOffset / cardWidthPx).coerceIn(-1f, 1f)
-                    val translation = relative * sideGapPx + if (isCurrent) dragOffset else dragOffset * 0.22f
-                    val distance = abs(relative.toFloat() + if (isCurrent) progress else progress * 0.18f)
-                    val scale = (1f - distance * 0.10f).coerceAtLeast(0.84f)
+                    val liveTranslation = relative * sideGapPx + if (isCurrent) dragOffset else dragOffset * 0.22f
+                    val liveDistance = abs(relative.toFloat() + if (isCurrent) progress else progress * 0.18f)
+                    val liveScale = (1f - liveDistance * 0.10f).coerceAtLeast(0.84f)
+                    val liveRotation = (-progress * 8f) + relative * 2.5f
+                    val liveAlpha = if (liveDistance > 1.4f) 0f else 1f
+
+                    val animatedTranslation by animateFloatAsState(
+                        targetValue = if (isDragging) liveTranslation else relative * sideGapPx,
+                        animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f),
+                        label = "group_card_translation_$relative"
+                    )
+                    val animatedScale by animateFloatAsState(
+                        targetValue = if (isDragging) liveScale else (1f - abs(relative) * 0.10f).coerceAtLeast(0.84f),
+                        animationSpec = spring(dampingRatio = 0.78f, stiffness = 460f),
+                        label = "group_card_scale_$relative"
+                    )
+                    val animatedRotation by animateFloatAsState(
+                        targetValue = if (isDragging) liveRotation else relative * 2.5f,
+                        animationSpec = spring(dampingRatio = 0.76f, stiffness = 430f),
+                        label = "group_card_rotation_$relative"
+                    )
+                    val animatedAlpha by animateFloatAsState(
+                        targetValue = if (isDragging) liveAlpha else 1f,
+                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 500f),
+                        label = "group_card_alpha_$relative"
+                    )
 
                     GroupCarouselCard(
                         group = group,
@@ -551,12 +580,12 @@ private fun SavedGroupsCarousel(
                             .align(Alignment.Center)
                             .zIndex(if (isCurrent) 2f else 1f)
                             .graphicsLayer {
-                                translationX = translation
-                                scaleX = scale
-                                scaleY = scale
-                                rotationY = (-progress * 8f) + relative * 2.5f
+                                translationX = animatedTranslation
+                                scaleX = animatedScale
+                                scaleY = animatedScale
+                                rotationY = animatedRotation
                                 cameraDistance = 14f * density.density
-                                alpha = if (distance > 1.4f) 0f else 1f
+                                alpha = animatedAlpha
                             },
                         onEdit = { onEdit(group) }
                     )
