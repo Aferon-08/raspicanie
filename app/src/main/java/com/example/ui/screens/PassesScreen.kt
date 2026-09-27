@@ -194,6 +194,7 @@ fun PassesScreen(
                     val badgeText = when (item.changeType) {
                         ChangeType.TIME_CHANGED -> "Перенос времени"
                         ChangeType.LOCATION_CHANGED -> "Смена аудитории"
+                        ChangeType.DETAILS_CHANGED -> "Изменение данных"
                         ChangeType.CANCELLED -> "Отмена занятия"
                         ChangeType.NEW_CLASS -> "Новое занятие"
                         ChangeType.RESTORED -> "Возобновлено"
