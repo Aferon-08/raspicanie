@@ -247,7 +247,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         )
         syncJob = viewModelScope.launch(Dispatchers.IO) {
             repository.clearChangeLog()
-            performRefreshSchedule()
+            performRefreshSchedule(group.id)
         }
     }
 
@@ -353,14 +353,14 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun refreshSchedule() {
         if (syncJob?.isActive == true) return
         syncJob = viewModelScope.launch(Dispatchers.IO) {
-            performRefreshSchedule()
+            performRefreshSchedule(repository.activeGroupId() ?: repository.groupId)
         }
     }
 
-    private suspend fun performRefreshSchedule() {
+    private suspend fun performRefreshSchedule(expectedGroupId: String) {
         _uiState.value = _uiState.value.copy(isSyncing = true)
         try {
-            when (val result = repository.syncSchedule()) {
+            when (val result = repository.syncSchedule(expectedGroupId)) {
                 is SyncResult.Success -> {
                     _uiState.value = _uiState.value.copy(isSyncing = false, syncFeedback = null)
                 }
