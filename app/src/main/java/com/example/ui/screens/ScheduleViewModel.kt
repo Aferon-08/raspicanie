@@ -71,7 +71,11 @@ private fun hasSubgroupMarker(event: ClassEvent): Boolean {
 private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
     if (events.size < 2) return events
     return events.groupBy { event ->
-        Triple(subgroupBaseTitle(event), event.startTimeMillis, event.endTimeMillis)
+        Triple(
+            subgroupBaseTitle(event),
+            event.startTimeMillis / 60_000L,
+            event.endTimeMillis / 60_000L
+        )
     }.values.flatMap { group ->
         if (group.size < 2) return@flatMap group
 
@@ -230,7 +234,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 ev.title.lowercase().contains(q) ||
                     ev.teacher.lowercase().contains(q) ||
                     ev.location.lowercase().contains(q) ||
-                    ev.description.lowercase().contains(q)
+                    ev.description.lowercase().contains(q) ||
+                    ev.displaySubgroups.any {
+                        it.teacher.lowercase().contains(q) || it.room.lowercase().contains(q)
+                    }
             } else {
                 true
             }
