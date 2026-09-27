@@ -48,57 +48,65 @@ enum class ThemeMode {
 }
 
 /**
- * Parallel subgroup events have the same subject and time, but different teachers/rooms.
- * Keep them as one visual lesson so the day is counted by lessons rather than subgroup rows.
+ * Parallel subgroup events are exported as separate calendar entries.
+ * They may have slightly different titles (for example, a subgroup suffix),
+ * so grouping only by the raw title is too strict.
  */
+private fun subgroupBaseTitle(event: ClassEvent): String {
+    return event.title.trim().lowercase()
+        .replace(Regex("""\s+"""), " ")
+        .replace(Regex("""\s*[\[(]\s*(?:под)?групп(?:а|ы)?\s*[0-9а-я-]+\s*[\])]"""), "")
+        .replace(Regex("""\s*[\[(]\s*(?:группа|гр\.?|подгруппа)\s*[0-9а-я-]+\s*[\])]"""), "")
+        .replace(Regex("""\s*[-–—:]?\s*(?:под)?групп(?:а|ы)?\s*[0-9а-я-]+\s*$"""), "")
+        .replace(Regex("""\s*[-–—:]?\s*(?:группа|гр\.?)\s*[0-9а-я-]+\s*$"""), "")
+        .replace(Regex("""\s+"""), " ")
+        .trim()
+}
+
+private fun hasSubgroupMarker(event: ClassEvent): Boolean {
+    val text = event.title + "\n" + event.description + "\n" + event.rawSummary
+    return Regex("""(?:подгрупп|группа\s*[0-9]|гр\.?\s*[0-9])""", RegexOption.IGNORE_CASE).containsMatchIn(text)
+}
+
 private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
     if (events.size < 2) return events
+    return events.groupBy { event ->
+        Triple(subgroupBaseTitle(event), event.startTimeMillis, event.endTimeMillis)
+    }.values.flatMap { group ->
+        if (group.size < 2) return@flatMap group
 
-    return events
-        .groupBy { event ->
-            val normalizedTitle = event.title.trim().lowercase().replace(Regex("\\s+"), " ")
-            Triple(normalizedTitle, event.startTimeMillis, event.endTimeMillis)
-        }
-        .values
-        .flatMap { group ->
-            if (group.size < 2) return@flatMap group
-
-            val subgroupRows = group.mapIndexed { index, event ->
-                val source = event.displaySubgroups.firstOrNull()
+        val rows = group
+            .sortedWith(compareBy<ClassEvent> { it.location }.thenBy { it.teacher }.thenBy { it.id })
+            .mapIndexed { index, event ->
+                val parsed = event.displaySubgroups.firstOrNull()
                 SubgroupInfo(
-                    number = source?.number?.takeIf { it.isNotBlank() } ?: (index + 1).toString(),
-                    teacher = source?.teacher?.takeIf { it.isNotBlank() } ?: event.teacher,
-                    room = source?.room?.takeIf { it.isNotBlank() } ?: event.location
+                    number = parsed?.number?.takeIf { it.isNotBlank() } ?: (index + 1).toString(),
+                    teacher = parsed?.teacher?.takeIf { it.isNotBlank() } ?: event.teacher,
+                    room = parsed?.room?.takeIf { it.isNotBlank() } ?: event.location
                 )
-            }.filter { it.teacher.isNotBlank() || it.room.isNotBlank() }
-
-            val hasDistinctDetails = subgroupRows
-                .map { it.teacher.trim().lowercase() to it.room.trim().lowercase() }
-                .distinct()
-                .size > 1
-
-            if (!hasDistinctDetails || subgroupRows.size < 2) {
-                return@flatMap group
             }
+            .filter { it.teacher.isNotBlank() || it.room.isNotBlank() }
 
-            val first = group.first()
-            listOf(
-                first.copy(
-                    teacher = subgroupRows.firstOrNull()?.teacher ?: first.teacher,
-                    location = subgroupRows.firstOrNull()?.room ?: first.location,
-                    isCancelled = group.all { it.isCancelled },
-                    hasChanges = group.any { it.hasChanges },
-                    changeDetails = group.mapNotNull { it.changeDetails?.takeIf(String::isNotBlank) }
-                        .distinct()
-                        .joinToString("\n")
-                        .ifBlank { null },
-                    subgroups = subgroupRows.mapIndexed { index, row ->
-                        row.copy(number = (index + 1).toString())
-                    }
-                )
-            )
-        }
-        .sortedBy { it.startTimeMillis }
+        val distinctDetails = rows
+            .map { it.teacher.trim().lowercase() to it.room.trim().lowercase() }
+            .distinct()
+            .size
+        val looksLikeParallelSubgroups =
+            group.any(::hasSubgroupMarker) || (rows.size >= 2 && distinctDetails >= 2)
+
+        if (!looksLikeParallelSubgroups || rows.size < 2) return@flatMap group
+
+        val first = group.first()
+        listOf(first.copy(
+            teacher = "",
+            location = "",
+            isCancelled = group.all { it.isCancelled },
+            hasChanges = group.any { it.hasChanges },
+            changeDetails = group.mapNotNull { it.changeDetails?.takeIf(String::isNotBlank) }
+                .distinct().joinToString("\n").ifBlank { null },
+            subgroups = rows.mapIndexed { index, row -> row.copy(number = (index + 1).toString()) }
+        ))
+    }.sortedBy { it.startTimeMillis }
 }
 
 data class ScheduleUiState(
@@ -165,7 +173,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         val calEvent = com.example.util.ScheduleTimeFormatter.getCalendar()
         val now = System.currentTimeMillis()
 
-        events.filter { ev ->
+        mergeSubgroupEvents(events).filter { ev ->
             calEvent.timeInMillis = ev.startTimeMillis
             val isSameDay = calEvent.get(Calendar.YEAR) == selYear && calEvent.get(Calendar.DAY_OF_YEAR) == selDay
             if (!isSameDay) return@filter false
@@ -192,7 +200,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             } else {
                 true
             }
-        }.let(::mergeSubgroupEvents)
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Same selected-day filtering as dayEvents, but keeps cancelled classes in the list
@@ -205,7 +213,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         val calEvent = com.example.util.ScheduleTimeFormatter.getCalendar()
         val now = System.currentTimeMillis()
 
-        events.filter { ev ->
+        mergeSubgroupEvents(events).filter { ev ->
             calEvent.timeInMillis = ev.startTimeMillis
             val isSameDay = calEvent.get(Calendar.YEAR) == selYear && calEvent.get(Calendar.DAY_OF_YEAR) == selDay
             if (!isSameDay) return@filter false
@@ -226,7 +234,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             } else {
                 true
             }
-        }.let(::mergeSubgroupEvents)
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Class count per day for badges on DaySelectorStrip
