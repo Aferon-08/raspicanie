@@ -233,6 +233,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun switchGroup(groupId: String) {
         val group = repository.switchGroup(groupId) ?: return
+        viewModelScope.launch {
+            repository.clearChangeLog()
+        }
         _uiState.value = _uiState.value.copy(
             groupId = group.id,
             groupTitle = group.title,
@@ -249,6 +252,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             runCatching {
                 repository.addGroup(title, url)
             }.onSuccess { group ->
+                repository.clearChangeLog()
                 _uiState.value = _uiState.value.copy(
                     groupId = group.id,
                     groupTitle = group.title,
