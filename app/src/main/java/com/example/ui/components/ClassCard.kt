@@ -8,7 +8,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.DecelerateEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
@@ -188,7 +187,7 @@ private fun GearCluster(
                     easing = if (animationDurationMillis >= 1500) {
                         // Для учебный день → учебный день сразу задаём высокую
                         // начальную скорость и затем непрерывно замедляемся.
-                        DecelerateEasing
+                        androidx.compose.animation.core.CubicBezierEasing(0.15f, 0f, 0.2f, 1f)
                     } else {
                         FastOutSlowInEasing
                     }
