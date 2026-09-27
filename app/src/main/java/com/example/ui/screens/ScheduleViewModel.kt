@@ -246,7 +246,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             syncFeedback = null
         )
         syncJob = viewModelScope.launch(Dispatchers.IO) {
-            repository.clearChangeLog()
+            repository.clearChangeLog(group.id)
             performRefreshSchedule(group.id)
         }
     }
