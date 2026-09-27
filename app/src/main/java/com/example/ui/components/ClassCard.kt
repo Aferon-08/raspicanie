@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
@@ -205,11 +206,24 @@ private fun GearCluster(
         entranceRotation.snapTo(currentRotation)
 
         val remainingMillis = (durationMillis - elapsedMillis).toInt().coerceAtLeast(1)
+        val remainingProgress = (1f - progress).coerceAtLeast(0.0001f)
+        val startEasedProgress = easing.transform(progress)
+
+        // Продолжаем ту же easing-кривую, а не переключаемся на LinearEasing.
+        // Благодаря этому скорость в момент появления карточки совпадает
+        // со скоростью уже идущей общей анимации — без резкого рывка.
+        val continuationEasing = Easing { fraction ->
+            (
+                startEasedProgress +
+                    (easing.transform(progress + fraction * remainingProgress) - startEasedProgress)
+            ) / remainingProgress
+        }
+
         entranceRotation.animateTo(
             targetValue = 360f,
             animationSpec = tween(
                 durationMillis = remainingMillis,
-                easing = LinearEasing
+                easing = continuationEasing
             )
         )
     }
