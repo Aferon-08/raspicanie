@@ -15,6 +15,7 @@ import com.example.notifications.NotificationScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.Calendar
+import java.util.UUID
 
 sealed interface SyncResult {
     data object Success : SyncResult
@@ -47,6 +48,121 @@ class ScheduleRepository(
         const val PREF_GROUP_TITLE = "pref_group_title"
         const val PREF_SHOW_CANCELLED = "pref_show_cancelled"
         const val PREF_DEBUG_ANIMATION = "pref_debug_animation"
+        const val PREF_SAVED_GROUPS = "pref_saved_groups"
+        const val PREF_ACTIVE_GROUP_ID = "pref_active_group_id"
+    }
+
+    private fun defaultSavedGroup(): SavedGroup = SavedGroup(
+        id = DEFAULT_GROUP_ID,
+        title = "2423 УИР · 3 курс",
+        url = String.format(BASE_CALENDAR_URL, DEFAULT_GROUP_ID)
+    )
+
+    private fun readSavedGroups(): List<SavedGroup> {
+        val raw = prefs.getString(PREF_SAVED_GROUPS, null)
+        if (raw.isNullOrBlank()) {
+            val legacy = SavedGroup(
+                id = groupId,
+                title = groupTitle,
+                url = customUrl ?: String.format(BASE_CALENDAR_URL, groupId)
+            )
+            writeSavedGroups(listOf(legacy))
+            prefs.edit().putString(PREF_ACTIVE_GROUP_ID, legacy.id).apply()
+            return listOf(legacy)
+        }
+
+        return runCatching {
+            val array = org.json.JSONArray(raw)
+            buildList {
+                for (index in 0 until array.length()) {
+                    val group = array.optJSONObject(index)?.toSavedGroup()
+                    if (group != null && group.id.isNotBlank() && group.url.isNotBlank()) {
+                        add(group)
+                    }
+                }
+            }.ifEmpty { listOf(defaultSavedGroup()) }
+        }.getOrElse {
+            listOf(defaultSavedGroup()).also { writeSavedGroups(it) }
+        }
+    }
+
+    private fun writeSavedGroups(groups: List<SavedGroup>) {
+        prefs.edit().putString(PREF_SAVED_GROUPS, groups.toJsonArray()).apply()
+    }
+
+    private fun activeGroupId(): String? = prefs.getString(PREF_ACTIVE_GROUP_ID, null)
+
+    private fun applyGroupToLegacySettings(group: SavedGroup) {
+        prefs.edit()
+            .putString(PREF_GROUP_ID, group.id)
+            .putString(PREF_GROUP_TITLE, group.title)
+            .putString(PREF_CUSTOM_URL, group.url)
+            .putString(PREF_ACTIVE_GROUP_ID, group.id)
+            .apply()
+    }
+
+    fun getSavedGroups(): List<SavedGroup> = readSavedGroups()
+
+    fun getActiveGroup(): SavedGroup {
+        val groups = readSavedGroups()
+        return groups.firstOrNull { it.id == activeGroupId() } ?: groups.first().also {
+            applyGroupToLegacySettings(it)
+        }
+    }
+
+    fun switchGroup(id: String): SavedGroup? {
+        val group = readSavedGroups().firstOrNull { it.id == id } ?: return null
+        applyGroupToLegacySettings(group)
+        return group
+    }
+
+    fun addGroup(title: String, url: String): SavedGroup {
+        val normalizedUrl = url.trim()
+        require(normalizedUrl.startsWith("http://") || normalizedUrl.startsWith("https://")) {
+            "Ссылка должна начинаться с http:// или https://"
+        }
+        val group = SavedGroup(
+            id = UUID.randomUUID().toString(),
+            title = title.trim().ifBlank { "Новая группа" },
+            url = normalizedUrl
+        )
+        writeSavedGroups(readSavedGroups() + group)
+        applyGroupToLegacySettings(group)
+        return group
+    }
+
+    fun updateSavedGroup(id: String, title: String, url: String): SavedGroup? {
+        val normalizedUrl = url.trim()
+        require(normalizedUrl.startsWith("http://") || normalizedUrl.startsWith("https://")) {
+            "Ссылка должна начинаться с http:// или https://"
+        }
+        val current = readSavedGroups().firstOrNull { it.id == id } ?: return null
+        val updated = current.copy(
+            title = title.trim().ifBlank { current.title },
+            url = normalizedUrl
+        )
+        writeSavedGroups(readSavedGroups().map { if (it.id == id) updated else it })
+        if (activeGroupId() == id) applyGroupToLegacySettings(updated)
+        return updated
+    }
+
+    fun deleteGroup(id: String): Boolean {
+        val groups = readSavedGroups()
+        if (groups.size <= 1) return false
+        val remaining = groups.filterNot { it.id == id }
+        if (remaining.size == groups.size) return false
+        writeSavedGroups(remaining)
+        if (activeGroupId() == id) applyGroupToLegacySettings(remaining.first())
+        return true
+    }
+
+    private fun updateActiveGroupStats(confirmedToday: Int) {
+        val active = getActiveGroup()
+        val updated = active.copy(
+            confirmedToday = confirmedToday,
+            updatedAtMillis = System.currentTimeMillis()
+        )
+        writeSavedGroups(readSavedGroups().map { if (it.id == active.id) updated else it })
     }
 
     var groupId: String
@@ -109,6 +225,14 @@ class ScheduleRepository(
         customUrl = newCustomUrl
         leadTimeMinutes = newLeadTimeMinutes
         newGroupTitle?.let { groupTitle = it }
+
+        val current = getActiveGroup()
+        val updated = current.copy(
+            title = newGroupTitle?.trim().orEmpty().ifBlank { current.title },
+            url = newCustomUrl?.trim().takeUnless { it.isNullOrBlank() }
+                ?: String.format(BASE_CALENDAR_URL, newGroupId)
+        )
+        writeSavedGroups(readSavedGroups().map { if (it.id == current.id) updated else it })
     }
 
     fun getCalendarUrl(): String {
@@ -180,6 +304,26 @@ class ScheduleRepository(
         if (parsedEvents.isEmpty() && !isFallback) {
             return SyncResult.Error("Календарь пуст или не содержит занятий")
         }
+
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val tomorrowStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.DAY_OF_MONTH, 1)
+        }.timeInMillis
+        val confirmedToday = parsedEvents.count {
+            !it.isCancelled &&
+                it.startTimeMillis >= todayStart &&
+                it.startTimeMillis < tomorrowStart
+        }
+        updateActiveGroupStats(confirmedToday)
 
         val oldEvents = database.scheduleDao().getAllEventsList().associateBy { it.id }
         val diff = ScheduleDiff.calculate(oldEvents, parsedEvents)
