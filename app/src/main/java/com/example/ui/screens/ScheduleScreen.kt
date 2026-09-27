@@ -93,6 +93,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.model.ClassEvent
 import com.example.ui.components.ClassCard
+import com.example.ui.components.SubgroupClassCard
 import com.example.ui.components.ClassDetailDialog
 import com.example.ui.components.ExpressiveBottomBar
 import com.example.ui.components.DaySelectorStrip
@@ -453,12 +454,20 @@ fun ScheduleScreen(
                                         Box(
                                             modifier = Modifier.padding(bottom = 14.dp)
                                         ) {
-                                            ClassCard(
-                                                event = event,
-                                                is24HourFormat = uiState.is24HourFormat,
-                                                forceOngoingAnimation = uiState.debugAnimationMode,
-                                                onCardClick = { selectedEventForDetail = it }
-                                            )
+                                            if (event.displaySubgroups.size > 1) {
+                                                SubgroupClassCard(
+                                                    event = event,
+                                                    is24HourFormat = uiState.is24HourFormat,
+                                                    onCardClick = { selectedEventForDetail = it }
+                                                )
+                                            } else {
+                                                ClassCard(
+                                                    event = event,
+                                                    is24HourFormat = uiState.is24HourFormat,
+                                                    forceOngoingAnimation = uiState.debugAnimationMode,
+                                                    onCardClick = { selectedEventForDetail = it }
+                                                )
+                                            }
                                         }
                                     }
                                 }
