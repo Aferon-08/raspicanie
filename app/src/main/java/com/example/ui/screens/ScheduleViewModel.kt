@@ -197,10 +197,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setThemeMode(mode: ThemeMode) {
+        repository.themeMode = mode.name
         _uiState.value = _uiState.value.copy(themeMode = mode)
     }
 
     fun setDynamicColor(enabled: Boolean) {
+        repository.dynamicColor = enabled
         _uiState.value = _uiState.value.copy(dynamicColor = enabled)
     }
 
@@ -244,6 +246,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         } else {
             updated[classId] = note
         }
+        repository.saveNotes(updated)
         _uiState.value = _uiState.value.copy(notes = updated)
     }
 
@@ -254,6 +257,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         } else {
             updated.add(classId)
         }
+        repository.saveMissedClasses(updated)
         _uiState.value = _uiState.value.copy(missedClasses = updated)
     }
 
