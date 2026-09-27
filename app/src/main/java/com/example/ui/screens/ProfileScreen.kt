@@ -433,7 +433,8 @@ private fun SavedGroupsCarousel(
     val density = LocalDensity.current
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val cardWidth = (maxWidth - 56.dp).coerceAtMost(420.dp)
+        val availableCardWidth = maxWidth - 56.dp
+        val cardWidth = if (availableCardWidth < 420.dp) availableCardWidth else 420.dp
         val cardWidthPx = with(density) { cardWidth.toPx() }
         val sideGapPx = cardWidthPx * 0.78f
 
