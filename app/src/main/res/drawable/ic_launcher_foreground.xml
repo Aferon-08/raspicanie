@@ -22,7 +22,7 @@
     <!-- Smaller KEMS mark inside the calendar -->
     <group
         android:pivotX="54"
-        android:pivotY="56"
+        android:pivotY="60"
         android:scaleX="0.44"
         android:scaleY="0.44">
         <path
