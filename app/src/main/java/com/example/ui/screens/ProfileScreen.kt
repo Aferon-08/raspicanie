@@ -59,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -551,6 +552,7 @@ private fun SavedGroupsCarousel(
                         modifier = Modifier
                             .width(cardWidth)
                             .align(Alignment.Center)
+                            .zIndex(if (isCurrent) 2f else 1f)
                             .graphicsLayer {
                                 translationX = translation
                                 scaleX = scale
