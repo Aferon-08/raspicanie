@@ -364,27 +364,6 @@ fun ClassCard(
 
                         Spacer(modifier = Modifier.height(9.dp))
 
-                        val teacher = event.displaySubgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() }
-                            ?: event.teacher
-                        if (teacher.isNotBlank()) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Person,
-                                    contentDescription = null,
-                                    tint = contentSecondaryColor,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = teacher,
-                                    fontSize = 13.sp,
-                                    color = contentSecondaryColor,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-
                         if (event.isOnline) {
                             val meetingUrl = event.onlineMeetingUrl
                             val meetingId = event.onlineMeetingId
@@ -471,6 +450,32 @@ fun ClassCard(
                     }
 
                     Spacer(modifier = Modifier.width(78.dp))
+                }
+
+                val teacher = event.displaySubgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() }
+                    ?: event.teacher
+                if (teacher.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = null,
+                            tint = contentSecondaryColor,
+                            modifier = Modifier.size(19.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = teacher,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = contentPrimaryColor,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
                 if (isOngoing) {
