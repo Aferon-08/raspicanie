@@ -161,7 +161,7 @@ fun ClassDetailDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 30.dp),
+                .padding(top = 46.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             AnimatedVisibility(
@@ -385,7 +385,7 @@ fun ClassDetailDialog(
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 20.dp),
+                                    .padding(bottom = 0.dp),
                                 colors = if (reminderEnabled) {
                                     ButtonDefaults.buttonColors(
                                         containerColor =
