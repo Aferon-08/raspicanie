@@ -1,7 +1,7 @@
 package com.example.data.model
 
 enum class ClassStatus { ONGOING, UPCOMING_SOON, SCHEDULED, COMPLETED, CANCELLED }
-enum class ChangeType { TIME_CHANGED, LOCATION_CHANGED, CANCELLED, NEW_CLASS, RESTORED }
+enum class ChangeType { TIME_CHANGED, LOCATION_CHANGED, DETAILS_CHANGED, CANCELLED, NEW_CLASS, RESTORED }
 
 data class SubgroupInfo(val number: String, val teacher: String, val room: String)
 
