@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Close
@@ -195,6 +195,7 @@ fun ClassDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 520.dp)
+                        .heightIn(max = 700.dp)
                         .pointerInput(event.id) {
                             detectVerticalDragGestures(
                                 onVerticalDrag = { change, dragAmount ->
@@ -221,7 +222,6 @@ fun ClassDetailDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(24.dp)
-                            .navigationBarsPadding()
                     ) {
                         Box(
                             modifier = Modifier.fillMaxWidth()
@@ -377,7 +377,9 @@ fun ClassDetailDialog(
                                     onToggleReminder(event)
                                     dismissWithAnimation()
                                 },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp),
                                 colors = if (reminderEnabled) {
                                     ButtonDefaults.buttonColors(
                                         containerColor =
