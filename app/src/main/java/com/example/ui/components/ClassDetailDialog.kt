@@ -166,7 +166,7 @@ fun ClassDetailDialog(
         ) {
             AnimatedVisibility(
                 visible = dialogVisible,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxSize(),
                 enter = fadeIn(animationSpec = tween(100)) +
                     slideInVertically(
                         initialOffsetY = { fullHeight -> fullHeight },
@@ -197,7 +197,6 @@ fun ClassDetailDialog(
                         .fillMaxWidth()
                         .widthIn(max = 520.dp)
                         .fillMaxHeight()
-                        .padding(top = 0.dp)
                         .pointerInput(event.id) {
                             detectVerticalDragGestures(
                                 onVerticalDrag = { change, dragAmount ->
@@ -223,6 +222,7 @@ fun ClassDetailDialog(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .fillMaxHeight()
                             .padding(
                                 start = 24.dp,
                                 top = 24.dp,
@@ -298,7 +298,7 @@ fun ClassDetailDialog(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f, fill = false)
+                                .weight(1f, fill = true)
                                 .verticalScroll(rememberScrollState())
                         ) {
                             if (event.hasChanges && !event.changeDetails.isNullOrBlank()) {
