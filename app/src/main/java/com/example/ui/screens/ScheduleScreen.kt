@@ -408,11 +408,12 @@ fun ScheduleScreen(
 
                         // 4. Classes List
                         AnimatedContent(
-                            targetState = dayEventsIncludingCancelled,
-                            contentKey = { events -> events.isNotEmpty() },
+                            targetState = uiState.selectedDateMillis to dayEventsIncludingCancelled,
+                            contentKey = { state -> state.first },
                             transitionSpec = {
-                                val initialHasEvents = initialState.isNotEmpty()
-                                val targetHasEvents = targetState.isNotEmpty()
+                                val initialHasEvents = initialState.second.isNotEmpty()
+                                val targetHasEvents = targetState.second.isNotEmpty()
+                                val movingForward = targetState.first >= initialState.first
 
                                 when {
                                     !initialHasEvents && targetHasEvents -> {
@@ -453,6 +454,41 @@ fun ScheduleScreen(
                                         )
                                     }
 
+                                    initialHasEvents && targetHasEvents -> {
+                                        (
+                                            if (movingForward) {
+                                                slideInHorizontally(
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.82f,
+                                                        stiffness = 380f
+                                                    )
+                                                ) { fullWidth -> fullWidth }
+                                            } else {
+                                                slideInHorizontally(
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.82f,
+                                                        stiffness = 380f
+                                                    )
+                                                ) { fullWidth -> -fullWidth }
+                                            }
+                                        ) + fadeIn(tween(160)) togetherWith (
+                                            if (movingForward) {
+                                                slideOutHorizontally(
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.86f,
+                                                        stiffness = 360f
+                                                    )
+                                                ) { fullWidth -> -fullWidth }
+                                            } else {
+                                                slideOutHorizontally(
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.86f,
+                                                        stiffness = 360f
+                                                    )
+                                                ) { fullWidth -> fullWidth }
+                                            }
+                                        ) + fadeOut(tween(120))
+                                    }
                                     else -> {
                                         fadeIn(tween(140)) togetherWith fadeOut(tween(100))
                                     }
