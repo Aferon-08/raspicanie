@@ -435,22 +435,30 @@ fun ScheduleScreen(
                                 contentKey = { state -> state.first },
                                 transitionSpec = {
                                     val forward = targetState.first >= initialState.first
-                                    (
-                                        slideInHorizontally(
-                                            animationSpec = spring(
-                                                dampingRatio = 0.82f,
-                                                stiffness = 380f
-                                            )
-                                        ) { fullWidth -> if (forward) fullWidth else -fullWidth } +
-                                            fadeIn(tween(180))
-                                    ) togetherWith (
-                                        slideOutHorizontally(
-                                            animationSpec = spring(
-                                                dampingRatio = 0.86f,
-                                                stiffness = 360f
-                                            )
-                                        ) { fullWidth -> if (forward) -fullWidth / 3 else fullWidth / 3 } +
-                                            fadeOut(tween(140))
+                                    val initialHasEvents = initialState.second.isNotEmpty()
+                                    val targetHasEvents = targetState.second.isNotEmpty()
+                                    if (!initialHasEvents && targetHasEvents) {
+                                        fadeIn(tween(180)) togetherWith fadeOut(tween(120))
+                                    } else if (initialHasEvents && !targetHasEvents) {
+                                        fadeIn(tween(180)) togetherWith fadeOut(tween(120))
+                                    } else {
+                                        (
+                                            slideInHorizontally(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.82f,
+                                                    stiffness = 380f
+                                                )
+                                            ) { fullWidth -> if (forward) fullWidth else -fullWidth } +
+                                                fadeIn(tween(180))
+                                        ) togetherWith (
+                                            slideOutHorizontally(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.86f,
+                                                    stiffness = 360f
+                                                )
+                                            ) { fullWidth -> if (forward) -fullWidth / 3 else fullWidth / 3 } +
+                                                fadeOut(tween(140))
+                                        )
                                     )
                                 },
                                 label = "day_classes_transition",
