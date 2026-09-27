@@ -3,6 +3,7 @@ package com.example.ui.screens
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -474,7 +475,7 @@ private fun SavedGroupsCarousel(
     var selectedIndex by remember(groups, activeGroupId) {
         mutableIntStateOf(groups.indexOfFirst { it.id == activeGroupId }.coerceAtLeast(0))
     }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
+    val dragOffset = remember { Animatable(0f) }
     val density = LocalDensity.current
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -511,19 +512,25 @@ private fun SavedGroupsCarousel(
                         detectHorizontalDragGestures(
                             onDragEnd = {
                                 val threshold = cardWidthPx * 0.20f
+                                val releasedOffset = dragOffset.value
                                 when {
-                                    dragOffset <= -threshold && selectedIndex < groups.lastIndex -> {
+                                    releasedOffset <= -threshold && selectedIndex < groups.lastIndex -> {
                                         selectedIndex += 1
                                         onGroupSelected(groups[selectedIndex].id)
                                     }
-                                    dragOffset >= threshold && selectedIndex > 0 -> {
+                                    releasedOffset >= threshold && selectedIndex > 0 -> {
                                         selectedIndex -= 1
                                         onGroupSelected(groups[selectedIndex].id)
                                     }
                                 }
-                                dragOffset = 0f
+                                dragOffset.animateTo(
+                                    0f,
+                                    animationSpec = spring(dampingRatio = 0.72f, stiffness = 480f)
+                                )
                             },
-                            onHorizontalDrag = { _, amount -> dragOffset += amount }
+                            onHorizontalDrag = { _, amount ->
+                                dragOffset.snapTo(dragOffset.value + amount)
+                            }
                         )
                     }
             ) {
@@ -532,8 +539,8 @@ private fun SavedGroupsCarousel(
                     if (index !in groups.indices) return@forEach
                     val group = groups[index]
                     val isCurrent = relative == 0
-                    val progress = if (cardWidthPx == 0f) 0f else (dragOffset / cardWidthPx).coerceIn(-1f, 1f)
-                    val translation = relative * sideGapPx + if (isCurrent) dragOffset else dragOffset * 0.22f
+                    val progress = if (cardWidthPx == 0f) 0f else (dragOffset.value / cardWidthPx).coerceIn(-1f, 1f)
+                    val translation = relative * sideGapPx + if (isCurrent) dragOffset.value else dragOffset.value * 0.22f
                     val distance = abs(relative.toFloat() + if (isCurrent) progress else progress * 0.18f)
                     val scale = (1f - distance * 0.10f).coerceAtLeast(0.84f)
 
