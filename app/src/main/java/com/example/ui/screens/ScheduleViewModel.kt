@@ -353,7 +353,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun refreshSchedule() {
         if (syncJob?.isActive == true) return
         syncJob = viewModelScope.launch(Dispatchers.IO) {
-            performRefreshSchedule(repository.activeGroupId() ?: repository.groupId)
+            performRefreshSchedule(repository.getActiveGroup().id)
         }
     }
 
