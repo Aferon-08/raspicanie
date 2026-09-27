@@ -1,5 +1,15 @@
 package com.example.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,8 +33,6 @@ import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -39,17 +47,6 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.delay
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.core.spring
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,16 +55,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.data.model.ClassEvent
 import com.example.data.model.ClassStatus
 import com.example.ui.theme.StatusChangedYellow
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
 import com.example.util.ScheduleTimeFormatter
+import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClassDetailDialog(
     event: ClassEvent,
@@ -124,19 +118,27 @@ fun ClassDetailDialog(
 
     val startStr = ScheduleTimeFormatter.formatTime(event.startTimeMillis, is24HourFormat)
     val endStr = ScheduleTimeFormatter.formatTime(event.endTimeMillis, is24HourFormat)
-    val dateStr = ScheduleTimeFormatter.formatDate(event.startTimeMillis, "EEEE, d MMMM yyyy").replaceFirstChar { it.uppercase() }
+    val dateStr = ScheduleTimeFormatter
+        .formatDate(event.startTimeMillis, "EEEE, d MMMM yyyy")
+        .replaceFirstChar { it.uppercase() }
 
-    BasicAlertDialog(
+    Dialog(
         onDismissRequest = { dismissWithAnimation() }
     ) {
         AnimatedVisibility(
             visible = dialogVisible,
             enter = fadeIn(tween(180)) +
                 scaleIn(initialScale = 0.78f, animationSpec = tween(260)) +
-                slideInVertically(initialOffsetY = { it / 6 }, animationSpec = tween(260)),
+                slideInVertically(
+                    initialOffsetY = { it / 6 },
+                    animationSpec = tween(260)
+                ),
             exit = fadeOut(tween(150)) +
                 scaleOut(targetScale = 0.82f, animationSpec = tween(190)) +
-                slideOutVertically(targetOffsetY = { it / 6 }, animationSpec = tween(190))
+                slideOutVertically(
+                    targetOffsetY = { it / 6 },
+                    animationSpec = tween(190)
+                )
         ) {
             androidx.compose.material3.Surface(
                 shape = RoundedCornerShape(28.dp),
@@ -153,7 +155,9 @@ fun ClassDetailDialog(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                                .background(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                )
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
@@ -232,7 +236,9 @@ fun ClassDetailDialog(
                             icon = Icons.Outlined.AccessTime,
                             iconTint = MaterialTheme.colorScheme.primary,
                             label = "Дата и время",
-                            value = dateStr + "\n" + startStr + " — " + endStr + " (" + event.durationMinutes + " мин)"
+                            value = dateStr + "\n" +
+                                startStr + " — " + endStr +
+                                " (" + event.durationMinutes + " мин)"
                         )
 
                         HorizontalDivider(
@@ -283,11 +289,16 @@ fun ClassDetailDialog(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = { dismissWithAnimation() }) {
+                        TextButton(
+                            onClick = { dismissWithAnimation() }
+                        ) {
                             Text("Закрыть")
                         }
 
-                        if (status != ClassStatus.COMPLETED && status != ClassStatus.CANCELLED) {
+                        if (
+                            status != ClassStatus.COMPLETED &&
+                            status != ClassStatus.CANCELLED
+                        ) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
                                 onClick = {
@@ -296,8 +307,10 @@ fun ClassDetailDialog(
                                 },
                                 colors = if (reminderEnabled) {
                                     ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        containerColor =
+                                            MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor =
+                                            MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                 } else {
                                     ButtonDefaults.buttonColors()
@@ -314,7 +327,11 @@ fun ClassDetailDialog(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    if (reminderEnabled) "Отключить напоминание" else "Напомнить за 5 минут",
+                                    if (reminderEnabled) {
+                                        "Отключить напоминание"
+                                    } else {
+                                        "Напомнить за 5 минут"
+                                    },
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -323,7 +340,7 @@ fun ClassDetailDialog(
                 }
             }
         }
-    )
+    }
 }
 
 @Composable
