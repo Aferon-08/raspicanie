@@ -131,16 +131,20 @@ fun ScheduleScreen(
                 val exactIntent = viewModel.repository.exactAlarmSettingsIntent()
                 if (exactIntent != null) {
                     runCatching { context.startActivity(exactIntent) }
-                    snackbarHostState.showSnackbar(
-                        "Для точного времени напоминаний разрешите точные будильники"
-                    )
+                    scheduleScope.launch {
+                        snackbarHostState.showSnackbar(
+                            "Для точного времени напоминаний разрешите точные будильники"
+                        )
+                    }
                 }
                 viewModel.toggleReminderForClass(event)
                 selectedEventForDetail = null
-            }
+            } ?: viewModel.triggerTestNotification(uiState.leadTimeMinutes)
         } else {
             pendingReminderEvent = null
-            snackbarHostState.showSnackbar("Разрешение на уведомления не выдано")
+            scheduleScope.launch {
+                snackbarHostState.showSnackbar("Разрешение на уведомления не выдано")
+            }
         }
     }
 
@@ -488,9 +492,11 @@ fun ScheduleScreen(
                         val exactIntent = viewModel.repository.exactAlarmSettingsIntent()
                         if (exactIntent != null) {
                             runCatching { context.startActivity(exactIntent) }
-                            snackbarHostState.showSnackbar(
-                                "Разрешите точные будильники для максимально точных напоминаний"
-                            )
+                            scheduleScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    "Разрешите точные будильники для максимально точных напоминаний"
+                                )
+                            }
                         }
                         viewModel.toggleReminderForClass(event)
                         selectedEventForDetail = null
