@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -161,12 +162,13 @@ fun ClassDetailDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 46.dp),
+                .padding(top = 46.dp)
+                .navigationBarsPadding(),
             contentAlignment = Alignment.BottomCenter
         ) {
             AnimatedVisibility(
                 visible = dialogVisible,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxWidth(),
                 enter = fadeIn(animationSpec = tween(100)) +
                     slideInVertically(
                         initialOffsetY = { fullHeight -> fullHeight },
@@ -222,7 +224,6 @@ fun ClassDetailDialog(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight()
                             .padding(
                                 start = 24.dp,
                                 top = 24.dp,
@@ -298,7 +299,7 @@ fun ClassDetailDialog(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f, fill = true)
+                                .weight(1f, fill = false)
                                 .verticalScroll(rememberScrollState())
                         ) {
                             if (event.hasChanges && !event.changeDetails.isNullOrBlank()) {
