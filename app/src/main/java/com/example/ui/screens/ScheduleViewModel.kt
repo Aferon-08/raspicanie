@@ -74,9 +74,16 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         ScheduleUiState(
             selectedDateMillis = getTodayStartMillis(),
             groupId = repository.groupId,
+            groupTitle = repository.groupTitle,
             customUrl = repository.customUrl,
             leadTimeMinutes = repository.leadTimeMinutes,
+            themeMode = runCatching { ThemeMode.valueOf(repository.themeMode) }.getOrDefault(ThemeMode.SYSTEM),
+            dynamicColor = repository.dynamicColor,
             is24HourFormat = repository.is24HourFormat,
+            showCancelledClasses = repository.showCancelledClasses,
+            debugAnimationMode = repository.debugAnimationMode,
+            notes = repository.getNotes(),
+            missedClasses = repository.getMissedClasses(),
             reminderEventIds = repository.getEnabledReminderIds()
         )
     )
@@ -198,6 +205,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun setThemeMode(mode: ThemeMode) {
         repository.themeMode = mode.name
+        repository.themeMode = mode.name
         _uiState.value = _uiState.value.copy(themeMode = mode)
     }
 
@@ -212,10 +220,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setDebugAnimationMode(enabled: Boolean) {
+        repository.debugAnimationMode = enabled
         _uiState.value = _uiState.value.copy(debugAnimationMode = enabled)
     }
 
     fun setGroupTitle(title: String) {
+        repository.groupTitle = title
         _uiState.value = _uiState.value.copy(groupTitle = title)
     }
 
@@ -228,6 +238,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setShowCancelledClasses(show: Boolean) {
+        repository.showCancelledClasses = show
         _uiState.value = _uiState.value.copy(showCancelledClasses = show)
     }
 
@@ -287,7 +298,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun updateSettings(groupId: String, customUrl: String?, leadTimeMinutes: Int, groupTitle: String = _uiState.value.groupTitle) {
         viewModelScope.launch {
-            repository.updateSettings(groupId, customUrl, leadTimeMinutes)
+            repository.updateSettings(groupId, customUrl, leadTimeMinutes, groupTitle)
             _uiState.value = _uiState.value.copy(
                 groupId = groupId,
                 customUrl = customUrl,
