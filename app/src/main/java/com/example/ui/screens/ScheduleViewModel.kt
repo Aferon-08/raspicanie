@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -71,6 +72,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     private val app = application as PlanovoApp
     val repository: ScheduleRepository = app.repository
     private val notificationHelper = app.notificationHelper
+    private var syncJob: Job? = null
 
     private val _uiState = MutableStateFlow(
         ScheduleUiState(
@@ -233,6 +235,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun switchGroup(groupId: String) {
         val group = repository.switchGroup(groupId) ?: return
+        syncJob?.cancel()
         _uiState.value = _uiState.value.copy(
             groupId = group.id,
             groupTitle = group.title,
@@ -241,9 +244,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             savedGroups = repository.getSavedGroups(),
             syncFeedback = null
         )
-        viewModelScope.launch {
+        syncJob = viewModelScope.launch {
             repository.clearChangeLog()
-            refreshSchedule()
+            performRefreshSchedule()
         }
     }
 
@@ -251,17 +254,11 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             runCatching {
                 repository.addGroup(title, url)
-            }.onSuccess { group ->
-                repository.clearChangeLog()
+            }.onSuccess {
                 _uiState.value = _uiState.value.copy(
-                    groupId = group.id,
-                    groupTitle = group.title,
-                    customUrl = group.url,
-                    selectedDateMillis = getTodayStartMillis(),
                     savedGroups = repository.getSavedGroups(),
                     syncFeedback = null
                 )
-                refreshSchedule()
             }.onFailure { error ->
                 _uiState.value = _uiState.value.copy(
                     syncFeedback = error.message ?: "Не удалось добавить группу"
@@ -353,9 +350,15 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun refreshSchedule() {
-        if (_uiState.value.isSyncing) return
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSyncing = true)
+        if (syncJob?.isActive == true) return
+        syncJob = viewModelScope.launch {
+            performRefreshSchedule()
+        }
+    }
+
+    private suspend fun performRefreshSchedule() {
+        _uiState.value = _uiState.value.copy(isSyncing = true)
+        try {
             when (val result = repository.syncSchedule()) {
                 is SyncResult.Success -> {
                     _uiState.value = _uiState.value.copy(isSyncing = false, syncFeedback = null)
@@ -374,6 +377,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 }
             }
             _uiState.value = _uiState.value.copy(savedGroups = repository.getSavedGroups())
+        } finally {
+            if (syncJob?.isActive != true) {
+                _uiState.value = _uiState.value.copy(isSyncing = false)
+            }
         }
     }
 
