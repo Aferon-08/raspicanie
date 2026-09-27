@@ -208,15 +208,15 @@ private fun GearCluster(
         val remainingMillis = (durationMillis - elapsedMillis).toInt().coerceAtLeast(1)
         val remainingProgress = (1f - progress).coerceAtLeast(0.0001f)
         val startEasedProgress = easing.transform(progress)
+        val remainingEasedProgress = (1f - startEasedProgress).coerceAtLeast(0.0001f)
 
-        // Продолжаем ту же easing-кривую, а не переключаемся на LinearEasing.
-        // Благодаря этому скорость в момент появления карточки совпадает
-        // со скоростью уже идущей общей анимации — без резкого рывка.
+        // Нормализуем продолжение относительно оставшегося угла.
+        // На последнем кадре easing гарантированно даёт ровно 1f,
+        // поэтому Animatable не делает дополнительный резкий доворот.
         val continuationEasing = Easing { fraction ->
-            (
-                startEasedProgress +
-                    (easing.transform(progress + fraction * remainingProgress) - startEasedProgress)
-            ) / remainingProgress
+            val absoluteProgress = progress + fraction * remainingProgress
+            ((easing.transform(absoluteProgress) - startEasedProgress) / remainingEasedProgress)
+                .coerceIn(0f, 1f)
         }
 
         entranceRotation.animateTo(
