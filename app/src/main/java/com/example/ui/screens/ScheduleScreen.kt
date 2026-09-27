@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -124,6 +125,15 @@ fun ScheduleScreen(
     var selectedEventForDetail by remember { mutableStateOf<ClassEvent?>(null) }
     var pendingReminderEvent by remember { mutableStateOf<ClassEvent?>(null) }
     val context = LocalContext.current
+    // One shared trigger is hoisted above LazyColumn so gear animations do not
+    // restart merely because cards leave/re-enter the viewport.
+    var gearAnimationTrigger by remember { mutableStateOf(0) }
+
+    LaunchedEffect(uiState.selectedDateMillis, dayEventsIncludingCancelled.isNotEmpty()) {
+        if (dayEventsIncludingCancelled.isNotEmpty()) {
+            gearAnimationTrigger++
+        }
+    }
 
     // Android 13+ Notification permission
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -426,7 +436,7 @@ fun ScheduleScreen(
                                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    items(events, key = { it.id }) { event ->
+                                    itemsIndexed(events, key = { _, event -> event.id }) { index, event ->
                                         val visible = uiState.showCancelledClasses || !event.isCancelled
 
                                         AnimatedVisibility(
@@ -456,6 +466,7 @@ fun ScheduleScreen(
                                                         event = event,
                                                         is24HourFormat = uiState.is24HourFormat,
                                                         forceOngoingAnimation = uiState.debugAnimationMode,
+                                                        gearAnimationTrigger = gearAnimationTrigger,
                                                         onCardClick = { selectedEventForDetail = it }
                                                     )
                                                 }
