@@ -8,8 +8,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -127,24 +126,24 @@ fun ClassDetailDialog(
     ) {
         AnimatedVisibility(
             visible = dialogVisible,
-            enter = fadeIn(tween(180)) +
-                scaleIn(initialScale = 0.78f, animationSpec = tween(260)) +
-                slideInVertically(
-                    initialOffsetY = { it / 6 },
-                    animationSpec = tween(260)
+            enter = fadeIn(animationSpec = tween(140)) +
+                scaleIn(
+                    initialScale = 0.90f,
+                    animationSpec = tween(240)
                 ),
-            exit = fadeOut(tween(150)) +
-                scaleOut(targetScale = 0.82f, animationSpec = tween(190)) +
-                slideOutVertically(
-                    targetOffsetY = { it / 6 },
-                    animationSpec = tween(190)
+            exit = fadeOut(animationSpec = tween(120)) +
+                scaleOut(
+                    targetScale = 0.94f,
+                    animationSpec = tween(180)
                 )
         ) {
             androidx.compose.material3.Surface(
                 shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 520.dp)
             ) {
                 Column(
                     modifier = Modifier
