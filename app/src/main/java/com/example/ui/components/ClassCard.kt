@@ -298,6 +298,7 @@ fun ClassCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .fillMaxHeight()
                     .padding(horizontal = 20.dp, vertical = 18.dp)
             ) {
                 val chipBg = if (isOngoing) {
@@ -534,6 +535,7 @@ fun ClassCard(
                 val teacher = event.displaySubgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() }
                     ?: event.teacher
                 if (teacher.isNotBlank()) {
+                    Spacer(modifier = Modifier.weight(1f))
                     Spacer(modifier = Modifier.height(14.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
