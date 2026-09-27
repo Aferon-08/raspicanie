@@ -50,6 +50,7 @@ class ScheduleRepository(
         const val PREF_DEBUG_ANIMATION = "pref_debug_animation"
         const val PREF_SAVED_GROUPS = "pref_saved_groups"
         const val PREF_ACTIVE_GROUP_ID = "pref_active_group_id"
+        const val PREF_LAST_SYNCED_GROUP_ID = "pref_last_synced_group_id"
     }
 
     private fun defaultSavedGroup(): SavedGroup = SavedGroup(
@@ -325,9 +326,19 @@ class ScheduleRepository(
         }
         updateActiveGroupStats(confirmedToday)
 
-        val oldEvents = database.scheduleDao().getAllEventsList().associateBy { it.id }
+        val activeId = activeGroupId() ?: groupId
+        val groupChangedSinceLastSync = prefs.getString(PREF_LAST_SYNCED_GROUP_ID, null) != activeId
+        val oldEvents = if (groupChangedSinceLastSync) {
+            emptyMap()
+        } else {
+            database.scheduleDao().getAllEventsList().associateBy { it.id }
+        }
         val diff = ScheduleDiff.calculate(oldEvents, parsedEvents)
-        val newChanges = diff.changes.map(ChangeEntity::fromDomain)
+        val newChanges = if (groupChangedSinceLastSync) {
+            emptyList()
+        } else {
+            diff.changes.map(ChangeEntity::fromDomain)
+        }
 
         // Cancel alarms for events removed from the remote calendar before replacing the DB.
         // Their old rows disappear during the transaction, so they cannot be found afterwards.
@@ -336,6 +347,7 @@ class ScheduleRepository(
         }
 
         database.scheduleDao().updateScheduleWithDiff(diff.events.map(ScheduleEntity::fromDomain), newChanges)
+        prefs.edit().putString(PREF_LAST_SYNCED_GROUP_ID, activeId).apply()
 
         // Reschedule alarms for upcoming classes
         rescheduleUpcomingNotifications()
