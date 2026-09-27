@@ -221,7 +221,12 @@ fun ClassDetailDialog(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp)
+                            .padding(
+                                start = 24.dp,
+                                top = 24.dp,
+                                end = 24.dp,
+                                bottom = 8.dp
+                            )
                     ) {
                         Box(
                             modifier = Modifier.fillMaxWidth()
@@ -379,7 +384,7 @@ fun ClassDetailDialog(
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 8.dp),
+                                    .padding(bottom = 12.dp),
                                 colors = if (reminderEnabled) {
                                     ButtonDefaults.buttonColors(
                                         containerColor =
