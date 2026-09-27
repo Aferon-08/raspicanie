@@ -128,7 +128,6 @@ class ScheduleRepository(
             url = normalizedUrl
         )
         writeSavedGroups(readSavedGroups() + group)
-        applyGroupToLegacySettings(group)
         return group
     }
 
