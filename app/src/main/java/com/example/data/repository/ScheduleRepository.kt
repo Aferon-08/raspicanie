@@ -339,17 +339,28 @@ class ScheduleRepository(
             diff.changes.map(ChangeEntity::fromDomain)
         }
 
-        // Cancel alarms for events removed from the remote calendar before replacing the DB.
-        // Their old rows disappear during the transaction, so they cannot be found afterwards.
-        if (diff.removedEventIds.isNotEmpty()) {
-            notificationScheduler.cancelAlarms(diff.removedEventIds)
+        // Cancel alarms before replacing the DB. When switching groups, the previous
+        // schedule is intentionally treated as a completely different calendar.
+        val alarmsToCancel = if (groupChangedSinceLastSync) {
+            oldEvents.keys
+        } else {
+            diff.removedEventIds
+        }
+        if (alarmsToCancel.isNotEmpty()) {
+            notificationScheduler.cancelAlarms(alarmsToCancel)
         }
 
         database.scheduleDao().updateScheduleWithDiff(diff.events.map(ScheduleEntity::fromDomain), newChanges)
         prefs.edit().putString(PREF_LAST_SYNCED_GROUP_ID, activeId).apply()
 
-        // Reschedule alarms for upcoming classes
-        rescheduleUpcomingNotifications()
+        // Only touch alarms affected by actual schedule changes. Cancelling and
+        // recreating every alarm on every sync caused visible pauses while switching groups.
+        val changedEventIds = diff.changes.mapTo(mutableSetOf()) { it.eventId }
+        if (changedEventIds.isNotEmpty()) {
+            notificationScheduler.rescheduleEnabled(
+                diff.events.filter { it.id in changedEventIds }
+            )
+        }
 
         return when {
             isFallback -> SyncResult.FallbackUsed(fallbackMsg)
