@@ -8,10 +8,13 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Density
 import androidx.core.view.WindowCompat
 
 @Composable
@@ -46,14 +49,23 @@ fun MyApplicationTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        shapes = ExpressiveShapes,
-        content = content
+    val density = LocalDensity.current
+    val fixedFontScaleDensity = Density(
+        density = density.density,
+        fontScale = 1f
     )
-}
 
+    CompositionLocalProvider(
+        LocalDensity provides fixedFontScaleDensity
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            shapes = ExpressiveShapes,
+            content = content
+        )
+    }
+}
 
 val ExpressiveShapes = Shapes(
     extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
