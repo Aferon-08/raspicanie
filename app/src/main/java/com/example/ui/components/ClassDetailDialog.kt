@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -66,6 +67,7 @@ import java.util.Locale
 
 import com.example.util.ScheduleTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClassDetailDialog(
     event: ClassEvent,
