@@ -160,7 +160,7 @@ fun ClassDetailDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 48.dp),
+                .padding(top = 40.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             AnimatedVisibility(
