@@ -44,6 +44,9 @@ class ScheduleRepository(
         const val PREF_DYNAMIC_COLOR = "pref_dynamic_color"
         const val PREF_NOTES = "pref_notes"
         const val PREF_MISSED_CLASSES = "pref_missed_classes"
+        const val PREF_GROUP_TITLE = "pref_group_title"
+        const val PREF_SHOW_CANCELLED = "pref_show_cancelled"
+        const val PREF_DEBUG_ANIMATION = "pref_debug_animation"
     }
 
     var groupId: String
@@ -57,6 +60,18 @@ class ScheduleRepository(
     var leadTimeMinutes: Int
         get() = prefs.getInt(PREF_LEAD_TIME, DEFAULT_LEAD_TIME)
         set(value) = prefs.edit().putInt(PREF_LEAD_TIME, value).apply()
+
+    var groupTitle: String
+        get() = prefs.getString(PREF_GROUP_TITLE, "2423 УИР · 3 курс") ?: "2423 УИР · 3 курс"
+        set(value) = prefs.edit().putString(PREF_GROUP_TITLE, value).apply()
+
+    var showCancelledClasses: Boolean
+        get() = prefs.getBoolean(PREF_SHOW_CANCELLED, true)
+        set(value) = prefs.edit().putBoolean(PREF_SHOW_CANCELLED, value).apply()
+
+    var debugAnimationMode: Boolean
+        get() = prefs.getBoolean(PREF_DEBUG_ANIMATION, false)
+        set(value) = prefs.edit().putBoolean(PREF_DEBUG_ANIMATION, value).apply()
 
     var is24HourFormat: Boolean
         get() = prefs.getBoolean(PREF_IS_24_HOUR, true)
