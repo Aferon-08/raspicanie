@@ -205,7 +205,6 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun setThemeMode(mode: ThemeMode) {
         repository.themeMode = mode.name
-        repository.themeMode = mode.name
         _uiState.value = _uiState.value.copy(themeMode = mode)
     }
 
