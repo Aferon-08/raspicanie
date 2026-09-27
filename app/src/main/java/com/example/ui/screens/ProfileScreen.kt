@@ -593,7 +593,8 @@ private fun SavedGroupsCarousel(
                             },
                             onEdit = { onEdit(group) }
                         )
-                    }
+                        }
+                    )
                 }
             }
 
