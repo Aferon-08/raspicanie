@@ -75,18 +75,34 @@ private fun hasSubgroupMarker(event: ClassEvent): Boolean {
 
 private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
     if (events.size < 2) return events
-    return events.groupBy { event ->
-        Triple(
-            subgroupBaseTitle(event),
-            // Allow small timestamp differences between parallel calendar entries.
-            event.startTimeMillis / 5_000L,
-            event.endTimeMillis / 5_000L
-        )
-    }.values.flatMap { group ->
+
+    // Do not rely on exact calendar timestamps: parallel entries from the same
+    // feed can differ by a few minutes. First group by normalized lesson title,
+    // then cluster nearby entries into parallel sets.
+    val clusters = mutableListOf<MutableList<ClassEvent>>()
+
+    events
+        .sortedWith(compareBy<ClassEvent> { subgroupBaseTitle(it) }.thenBy { it.startTimeMillis })
+        .forEach { event ->
+            val baseTitle = subgroupBaseTitle(event)
+            val cluster = clusters.lastOrNull()
+            if (
+                cluster != null &&
+                subgroupBaseTitle(cluster.first()) == baseTitle &&
+                kotlin.math.abs(event.startTimeMillis - cluster.first().startTimeMillis) <= 15 * 60 * 1000L &&
+                kotlin.math.abs(event.endTimeMillis - cluster.first().endTimeMillis) <= 15 * 60 * 1000L
+            ) {
+                cluster.add(event)
+            } else {
+                clusters.add(mutableListOf(event))
+            }
+        }
+
+    return clusters.flatMap { group ->
         if (group.size < 2) return@flatMap group
 
         val rows = group
-            .sortedWith(compareBy<ClassEvent> { it.location }.thenBy { it.teacher }.thenBy { it.id })
+            .sortedWith(compareBy<ClassEvent> { it.teacher }.thenBy { it.location }.thenBy { it.id })
             .mapIndexed { index, event ->
                 val parsed = event.displaySubgroups.firstOrNull()
                 SubgroupInfo(
@@ -101,24 +117,33 @@ private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
             .map { it.teacher.trim().lowercase() to it.room.trim().lowercase() }
             .distinct()
             .size
+
+        // A parallel lesson is either explicitly marked as a subgroup or has
+        // multiple entries for the same lesson/time with different details.
         val looksLikeParallelSubgroups =
             group.any(::hasSubgroupMarker) || (rows.size >= 2 && distinctDetails >= 2)
 
-        if (!looksLikeParallelSubgroups || rows.size < 2) return@flatMap group
-
-        val first = group.first()
-        listOf(first.copy(
-            teacher = "",
-            location = "",
-            isCancelled = group.all { it.isCancelled },
-            hasChanges = group.any { it.hasChanges },
-            changeDetails = group.mapNotNull { it.changeDetails?.takeIf(String::isNotBlank) }
-                .distinct().joinToString("\n").ifBlank { null },
-            subgroups = rows.mapIndexed { index, row -> row.copy(number = (index + 1).toString()) }
-        ))
+        if (!looksLikeParallelSubgroups || rows.size < 2) {
+            group
+        } else {
+            val first = group.first()
+            listOf(
+                first.copy(
+                    teacher = "",
+                    location = "",
+                    isCancelled = group.all { it.isCancelled },
+                    hasChanges = group.any { it.hasChanges },
+                    changeDetails = group.mapNotNull {
+                        it.changeDetails?.takeIf(String::isNotBlank)
+                    }.distinct().joinToString("\n").ifBlank { null },
+                    subgroups = rows.mapIndexed { index, row ->
+                        row.copy(number = (index + 1).toString())
+                    }
+                )
+            )
+        }
     }.sortedBy { it.startTimeMillis }
 }
-
 data class ScheduleUiState(
     val selectedDateMillis: Long,
     val isSyncing: Boolean = false,
