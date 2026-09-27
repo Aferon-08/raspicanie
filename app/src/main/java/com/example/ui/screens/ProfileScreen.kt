@@ -92,6 +92,8 @@ fun ProfileScreen(
     var customUrlInput by remember(uiState.customUrl) { mutableStateOf(uiState.customUrl ?: "") }
     var selectedLeadTime by remember(uiState.leadTimeMinutes) { mutableIntStateOf(uiState.leadTimeMinutes) }
     var groupDialog by remember { mutableStateOf<GroupDialogState?>(null) }
+    val activeGroupUrl = uiState.customUrl
+        ?: ("https://planovo.pro/api/v1/public/groups/" + uiState.groupId + "/calendar.ics")
 
     AnimatedContent(
         targetState = groupManagerExpanded,
@@ -125,7 +127,7 @@ fun ProfileScreen(
                 if (expanded) {
                     SavedGroupsCarousel(
                         groups = uiState.savedGroups,
-                        activeGroupId = uiState.groupId,
+                        activeGroupId = activeGroupUrl,
                         onGroupSelected = onSwitchGroup,
                         onAdd = { groupDialog = GroupDialogState.Create },
                         onEdit = { groupDialog = GroupDialogState.Edit(it) }
@@ -134,7 +136,7 @@ fun ProfileScreen(
                     CurrentGroupCard(
                         title = uiState.groupTitle,
                         url = uiState.customUrl ?: ("https://planovo.pro/api/v1/public/groups/" + uiState.groupId + "/calendar.ics"),
-                        confirmedToday = uiState.savedGroups.firstOrNull { it.id == uiState.groupId }?.confirmedToday ?: 0,
+                        confirmedToday = uiState.savedGroups.firstOrNull { it.url == activeGroupUrl }?.confirmedToday ?: 0,
                         onAddGroup = { groupManagerExpanded = true },
                         onManageGroups = { groupManagerExpanded = true }
                     )
@@ -472,7 +474,7 @@ private fun SavedGroupsCarousel(
     }
 
     var selectedIndex by remember(groups, activeGroupId) {
-        mutableIntStateOf(groups.indexOfFirst { it.id == activeGroupId }.coerceAtLeast(0))
+        mutableIntStateOf(groups.indexOfFirst { it.url == activeGroupId }.coerceAtLeast(0))
     }
     val dragOffset = remember { Animatable(0f) }
     val density = LocalDensity.current
