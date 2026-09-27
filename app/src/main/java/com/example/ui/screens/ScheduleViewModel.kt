@@ -59,6 +59,11 @@ private fun subgroupBaseTitle(event: ClassEvent): String {
         .replace(Regex("""\s*[\[(]\s*(?:группа|гр\.?|подгруппа)\s*[0-9а-я-]+\s*[\])]"""), "")
         .replace(Regex("""\s*[-–—:]?\s*(?:под)?групп(?:а|ы)?\s*[0-9а-я-]+\s*$"""), "")
         .replace(Regex("""\s*[-–—:]?\s*(?:группа|гр\.?)\s*[0-9а-я-]+\s*$"""), "")
+        // Calendar feeds often encode parallel lessons as e.g. "Math (Иванов И.И.)"
+        // or "Math - Иванов И.И.". The parser removes the teacher from parentheses,
+        // but other feed variants keep it in the title. Normalize these forms too.
+        .replace(Regex("""\s*\([^()]*\)\s*$"""), "")
+        .replace(Regex("""\s+[-–—:]\s+[^-–—:]+$"""), "")
         .replace(Regex("""\s+"""), " ")
         .trim()
 }
@@ -73,8 +78,9 @@ private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
     return events.groupBy { event ->
         Triple(
             subgroupBaseTitle(event),
-            event.startTimeMillis / 60_000L,
-            event.endTimeMillis / 60_000L
+            // Allow small timestamp differences between parallel calendar entries.
+            event.startTimeMillis / 5_000L,
+            event.endTimeMillis / 5_000L
         )
     }.values.flatMap { group ->
         if (group.size < 2) return@flatMap group
