@@ -83,7 +83,7 @@ fun SubgroupClassCard(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-            }
+            },
         shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isOngoing) 4.dp else 1.dp)
