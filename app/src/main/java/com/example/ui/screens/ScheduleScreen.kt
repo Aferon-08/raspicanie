@@ -431,14 +431,10 @@ fun ScheduleScreen(
                             }
                         } else {
                             AnimatedContent(
-                                targetState = dayEventsIncludingCancelled,
-                                contentKey = { events -> events.joinToString(separator = "|") { it.id } },
+                                targetState = uiState.selectedDateMillis to dayEventsIncludingCancelled,
+                                contentKey = { state -> state.first },
                                 transitionSpec = {
-                                    val forward = targetState.firstOrNull()?.dateMillis?.let { targetDate ->
-                                        initialState.firstOrNull()?.dateMillis?.let { initialDate ->
-                                            targetDate >= initialDate
-                                        }
-                                    } ?: true
+                                    val forward = targetState.first >= initialState.first
                                     (
                                         slideInHorizontally(
                                             animationSpec = spring(
@@ -459,7 +455,8 @@ fun ScheduleScreen(
                                 },
                                 label = "day_classes_transition",
                                 modifier = Modifier.weight(1f)
-                            ) { events ->
+                            ) { state ->
+                                val events = state.second
                                 LazyColumn(
                                     state = classListState,
                                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
