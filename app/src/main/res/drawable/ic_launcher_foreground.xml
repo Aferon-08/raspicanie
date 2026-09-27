@@ -6,7 +6,7 @@
     android:viewportHeight="108">
     <!-- Rounded calendar body -->
     <path
-        android:fillColor="@color/icon_foreground"
+        android:fillColor="?attr/colorOnPrimaryContainer"
         android:pathData="M29,25C24.6,25 21,28.6 21,33v42c0,4.4 3.6,8 8,8h50c4.4,0 8,-3.6 8,-8V33c0,-4.4 -3.6,-8 -8,-8H29zM29,31h50c1.1,0 2,0.9 2,2v9H27v-9c0,-1.1 0.9,-2 2,-2zM27,48h54v27c0,1.1 -0.9,2 -2,2H29c-1.1,0 -2,-0.9 -2,-2V48z" />
     <!-- Binding rings -->
     <path
