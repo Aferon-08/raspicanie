@@ -128,6 +128,8 @@ fun ScheduleScreen(
     // One shared trigger is hoisted above LazyColumn so gear animations do not
     // restart merely because cards leave/re-enter the viewport.
     var gearAnimationTrigger by remember { mutableStateOf(0) }
+    var gearAnimationFast by remember { mutableStateOf(true) }
+    var previousDayHadEvents by remember { mutableStateOf(false) }
     var scheduleHasAppeared by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -135,9 +137,14 @@ fun ScheduleScreen(
     }
 
     LaunchedEffect(uiState.selectedDateMillis, dayEventsIncludingCancelled.isNotEmpty()) {
-        if (dayEventsIncludingCancelled.isNotEmpty()) {
+        val hasEvents = dayEventsIncludingCancelled.isNotEmpty()
+        if (hasEvents) {
+            // Переход из выходного в учебный день — короткое, энергичное вращение.
+            // Между двумя учебными днями — заметно более медленное вращение.
+            gearAnimationFast = !previousDayHadEvents
             gearAnimationTrigger++
         }
+        previousDayHadEvents = hasEvents
     }
 
     // Android 13+ Notification permission
@@ -489,6 +496,7 @@ fun ScheduleScreen(
                                                         is24HourFormat = uiState.is24HourFormat,
                                                         forceOngoingAnimation = uiState.debugAnimationMode,
                                                         gearAnimationTrigger = gearAnimationTrigger,
+                                                        gearAnimationDurationMillis = if (gearAnimationFast) 760 else 1800,
                                                         onCardClick = { selectedEventForDetail = it }
                                                     )
                                                 }
