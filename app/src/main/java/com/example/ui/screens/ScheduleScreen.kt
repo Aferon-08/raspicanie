@@ -82,11 +82,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.model.ClassEvent
@@ -116,13 +118,29 @@ fun ScheduleScreen(
     val classListState = rememberLazyListState()
     val scheduleScope = rememberCoroutineScope()
     var selectedEventForDetail by remember { mutableStateOf<ClassEvent?>(null) }
+    var pendingReminderEvent by remember { mutableStateOf<ClassEvent?>(null) }
+    val context = LocalContext.current
 
     // Android 13+ Notification permission
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            viewModel.triggerTestNotification(uiState.leadTimeMinutes)
+            pendingReminderEvent?.let { event ->
+                pendingReminderEvent = null
+                val exactIntent = viewModel.repository.exactAlarmSettingsIntent()
+                if (exactIntent != null) {
+                    runCatching { context.startActivity(exactIntent) }
+                    snackbarHostState.showSnackbar(
+                        "Для точного времени напоминаний разрешите точные будильники"
+                    )
+                }
+                viewModel.toggleReminderForClass(event)
+                selectedEventForDetail = null
+            }
+        } else {
+            pendingReminderEvent = null
+            snackbarHostState.showSnackbar("Разрешение на уведомления не выдано")
         }
     }
 
@@ -451,9 +469,33 @@ fun ScheduleScreen(
             is24HourFormat = uiState.is24HourFormat,
             reminderEnabled = event.id in uiState.reminderEventIds,
             onDismiss = { selectedEventForDetail = null },
-            onToggleReminder = {
-                viewModel.toggleReminderForClass(it)
-                selectedEventForDetail = null
+            onToggleReminder = { event ->
+                if (event.id in uiState.reminderEventIds) {
+                    viewModel.toggleReminderForClass(event)
+                    selectedEventForDetail = null
+                } else {
+                    val notificationsGranted =
+                        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                    if (!notificationsGranted) {
+                        pendingReminderEvent = event
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        val exactIntent = viewModel.repository.exactAlarmSettingsIntent()
+                        if (exactIntent != null) {
+                            runCatching { context.startActivity(exactIntent) }
+                            snackbarHostState.showSnackbar(
+                                "Разрешите точные будильники для максимально точных напоминаний"
+                            )
+                        }
+                        viewModel.toggleReminderForClass(event)
+                        selectedEventForDetail = null
+                    }
+                }
             }
         )
     }
