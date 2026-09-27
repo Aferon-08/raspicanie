@@ -158,6 +158,10 @@ class ScheduleRepository(
 
     private fun updateActiveGroupStats(confirmedToday: Int) {
         val active = getActiveGroup()
+        // Do not rewrite SharedPreferences on every periodic sync when the count
+        // did not change. The timestamp is informational and does not need a write
+        // every minute.
+        if (active.confirmedToday == confirmedToday) return
         val updated = active.copy(
             confirmedToday = confirmedToday,
             updatedAtMillis = System.currentTimeMillis()
@@ -356,7 +360,19 @@ class ScheduleRepository(
         }
 
         if (activeGroupId() != expectedGroupId) return SyncResult.Success
-        database.scheduleDao().updateScheduleWithDiff(diff.events.map(ScheduleEntity::fromDomain), newChanges)
+        // A periodic sync often returns exactly the same calendar. Avoid rewriting
+        // the entire Room table in that case: clear+insert emits the Flow again and
+        // forces the whole Compose schedule to recalculate every minute.
+        val scheduleChanged = groupChangedSinceLastSync ||
+            diff.changes.isNotEmpty() ||
+            diff.removedEventIds.isNotEmpty() ||
+            oldEvents.size != parsedEvents.size
+        if (scheduleChanged) {
+            database.scheduleDao().updateScheduleWithDiff(
+                diff.events.map(ScheduleEntity::fromDomain),
+                newChanges
+            )
+        }
         prefs.edit().putString(PREF_LAST_SYNCED_GROUP_ID, activeId).apply()
 
         // Only touch alarms affected by actual schedule changes. Cancelling and

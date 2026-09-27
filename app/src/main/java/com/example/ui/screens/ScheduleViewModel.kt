@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -174,89 +175,63 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     val allChanges: StateFlow<List<ScheduleChange>> = repository.getAllChanges()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Events for the selected date with filters and search applied
-    val dayEvents: StateFlow<List<ClassEvent>> = combine(allEvents, _uiState) { events, state ->
-        val calSelected = com.example.util.ScheduleTimeFormatter.getCalendar(state.selectedDateMillis)
-        val selYear = calSelected.get(Calendar.YEAR)
-        val selDay = calSelected.get(Calendar.DAY_OF_YEAR)
+    // Normalize/group events once. Previously every derived flow repeated the
+    // subgroup merge and its regular-expression work, so a single state change
+    // could process the entire schedule several times.
+    private val processedEvents: StateFlow<List<ClassEvent>> = allEvents
+        .map(::mergeSubgroupEvents)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-        val calEvent = com.example.util.ScheduleTimeFormatter.getCalendar()
-        val now = System.currentTimeMillis()
-
-        mergeSubgroupEvents(events).filter { ev ->
-            calEvent.timeInMillis = ev.startTimeMillis
-            val isSameDay = calEvent.get(Calendar.YEAR) == selYear && calEvent.get(Calendar.DAY_OF_YEAR) == selDay
-            if (!isSameDay) return@filter false
-
-            // Hide cancelled classes when the schedule toggle is disabled.
-            if (!state.showCancelledClasses && ev.isCancelled) return@filter false
-
-            // Filter logic
-            val matchesFilter = when (state.filter) {
-                ClassFilter.ALL -> true
-                ClassFilter.UPCOMING_ONLY -> ev.endTimeMillis > now && !ev.isCancelled
-                ClassFilter.CHANGES_ONLY -> ev.hasChanges || ev.isCancelled
-            }
-            if (!matchesFilter) return@filter false
-
-            // Search query logic
-            if (state.searchQuery.isNotBlank()) {
-                val q = state.searchQuery.trim().lowercase()
-                val inTitle = ev.title.lowercase().contains(q)
-                val inTeacher = ev.teacher.lowercase().contains(q)
-                val inLocation = ev.location.lowercase().contains(q)
-                val inDesc = ev.description.lowercase().contains(q)
-                inTitle || inTeacher || inLocation || inDesc
-            } else {
-                true
-            }
+    // Keep one canonical selected-day pipeline and derive the cancelled-filtered
+    // list from it. This prevents duplicate Calendar/search/regex work.
+    val dayEventsIncludingCancelled: StateFlow<List<ClassEvent>> = combine(processedEvents, _uiState) { events, state ->
+        val selected = com.example.util.ScheduleTimeFormatter.getCalendar(state.selectedDateMillis).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    // Same selected-day filtering as dayEvents, but keeps cancelled classes in the list
-    // so the UI can animate their disappearance and reappearance.
-    val dayEventsIncludingCancelled: StateFlow<List<ClassEvent>> = combine(allEvents, _uiState) { events, state ->
-        val calSelected = com.example.util.ScheduleTimeFormatter.getCalendar(state.selectedDateMillis)
-        val selYear = calSelected.get(Calendar.YEAR)
-        val selDay = calSelected.get(Calendar.DAY_OF_YEAR)
-
-        val calEvent = com.example.util.ScheduleTimeFormatter.getCalendar()
+        val dayStart = selected.timeInMillis
+        val dayEnd = Calendar.getInstance().apply {
+            timeInMillis = dayStart
+            add(Calendar.DAY_OF_MONTH, 1)
+        }.timeInMillis
         val now = System.currentTimeMillis()
+        val query = state.searchQuery.trim().lowercase().takeIf(String::isNotBlank)
 
-        mergeSubgroupEvents(events).filter { ev ->
-            calEvent.timeInMillis = ev.startTimeMillis
-            val isSameDay = calEvent.get(Calendar.YEAR) == selYear && calEvent.get(Calendar.DAY_OF_YEAR) == selDay
-            if (!isSameDay) return@filter false
-
-            val matchesFilter = when (state.filter) {
-                ClassFilter.ALL -> true
-                ClassFilter.UPCOMING_ONLY -> ev.endTimeMillis > now && !ev.isCancelled
-                ClassFilter.CHANGES_ONLY -> ev.hasChanges || ev.isCancelled
+        events.asSequence()
+            .filter { it.startTimeMillis >= dayStart && it.startTimeMillis < dayEnd }
+            .filter { event ->
+                when (state.filter) {
+                    ClassFilter.ALL -> true
+                    ClassFilter.UPCOMING_ONLY -> event.endTimeMillis > now && !event.isCancelled
+                    ClassFilter.CHANGES_ONLY -> event.hasChanges || event.isCancelled
+                }
             }
-            if (!matchesFilter) return@filter false
-
-            if (state.searchQuery.isNotBlank()) {
-                val q = state.searchQuery.trim().lowercase()
-                ev.title.lowercase().contains(q) ||
-                    ev.teacher.lowercase().contains(q) ||
-                    ev.location.lowercase().contains(q) ||
-                    ev.description.lowercase().contains(q) ||
-                    ev.displaySubgroups.any {
-                        it.teacher.lowercase().contains(q) || it.room.lowercase().contains(q)
+            .filter { event ->
+                query == null ||
+                    event.title.lowercase().contains(query) ||
+                    event.teacher.lowercase().contains(query) ||
+                    event.location.lowercase().contains(query) ||
+                    event.description.lowercase().contains(query) ||
+                    event.displaySubgroups.any { subgroup ->
+                        subgroup.teacher.lowercase().contains(query) || subgroup.room.lowercase().contains(query)
                     }
-            } else {
-                true
             }
-        }
+            .toList()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Class count per day for badges on DaySelectorStrip
-    val classCountByDay: StateFlow<Map<Long, Int>> = allEvents.combine(_uiState) { events, state ->
-        val map = mutableMapOf<Long, Int>()
+    val dayEvents: StateFlow<List<ClassEvent>> = combine(dayEventsIncludingCancelled, _uiState) { events, state ->
+        if (state.showCancelledClasses) events else events.filterNot(ClassEvent::isCancelled)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Class count per day for badges on DaySelectorStrip.
+    val classCountByDay: StateFlow<Map<Long, Int>> = combine(processedEvents, _uiState) { events, state ->
+        val map = HashMap<Long, Int>(events.size)
         val cal = com.example.util.ScheduleTimeFormatter.getCalendar()
-        mergeSubgroupEvents(events).forEach { ev ->
-            if (!state.showCancelledClasses && ev.isCancelled) return@forEach
-            cal.timeInMillis = ev.startTimeMillis
+        events.forEach { event ->
+            if (!state.showCancelledClasses && event.isCancelled) return@forEach
+            cal.timeInMillis = event.startTimeMillis
             cal.set(Calendar.HOUR_OF_DAY, 0)
             cal.set(Calendar.MINUTE, 0)
             cal.set(Calendar.SECOND, 0)
