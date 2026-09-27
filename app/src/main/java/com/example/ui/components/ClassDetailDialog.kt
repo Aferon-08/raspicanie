@@ -56,7 +56,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +85,7 @@ fun ClassDetailDialog(
     var dialogVisible by remember(event.id) { mutableStateOf(false) }
     var dragOffsetY by remember(event.id) { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
 
     fun dismissWithAnimation() {
         if (!dialogVisible) return
@@ -198,7 +201,7 @@ fun ClassDetailDialog(
                                     dragOffsetY = (dragOffsetY + dragAmount).coerceAtLeast(0f)
                                 },
                                 onDragEnd = {
-                                    if (dragOffsetY > 180.dp.value * density) {
+                                    if (dragOffsetY > 180.dp.toPx(density)) {
                                         dismissWithAnimation()
                                     } else {
                                         resetDrag()
@@ -457,8 +460,7 @@ private fun DetailRow(
 }
 
 private fun Modifier.offsetY(value: Float): Modifier =
-    this.then(
-        Modifier.graphicsLayer {
-            translationY = value
-        }
-    )
+    this.graphicsLayer {
+        translationY = value
+    }
+
