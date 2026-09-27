@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -244,7 +245,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             savedGroups = repository.getSavedGroups(),
             syncFeedback = null
         )
-        syncJob = viewModelScope.launch {
+        syncJob = viewModelScope.launch(Dispatchers.IO) {
             repository.clearChangeLog()
             performRefreshSchedule()
         }
@@ -351,7 +352,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun refreshSchedule() {
         if (syncJob?.isActive == true) return
-        syncJob = viewModelScope.launch {
+        syncJob = viewModelScope.launch(Dispatchers.IO) {
             performRefreshSchedule()
         }
     }
