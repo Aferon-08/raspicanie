@@ -287,6 +287,7 @@ fun ClassCard(
             elevation = CardDefaults.cardElevation(defaultElevation = cardElevation),
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = 214.dp)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null
