@@ -16,6 +16,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.togetherWith
@@ -428,45 +430,76 @@ fun ScheduleScreen(
                                 }
                             }
                         } else {
-                            LazyColumn(
-                                state = classListState,
-                                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
+                            AnimatedContent(
+                                targetState = dayEventsIncludingCancelled,
+                                contentKey = { events -> events.joinToString(separator = "|") { it.id } },
+                                transitionSpec = {
+                                    val forward = targetState.firstOrNull()?.dateMillis?.let { targetDate ->
+                                        initialState.firstOrNull()?.dateMillis?.let { initialDate ->
+                                            targetDate >= initialDate
+                                        }
+                                    } ?: true
+                                    (
+                                        slideInHorizontally(
+                                            animationSpec = spring(
+                                                dampingRatio = 0.82f,
+                                                stiffness = 380f
+                                            )
+                                        ) { fullWidth -> if (forward) fullWidth else -fullWidth } +
+                                            fadeIn(tween(180))
+                                    ) togetherWith (
+                                        slideOutHorizontally(
+                                            animationSpec = spring(
+                                                dampingRatio = 0.86f,
+                                                stiffness = 360f
+                                            )
+                                        ) { fullWidth -> if (forward) -fullWidth / 3 else fullWidth / 3 } +
+                                            fadeOut(tween(140))
+                                    )
+                                },
+                                label = "day_classes_transition",
                                 modifier = Modifier.weight(1f)
-                            ) {
-                                items(dayEventsIncludingCancelled, key = { it.id }) { event ->
-                                    val visible = uiState.showCancelledClasses || !event.isCancelled
+                            ) { events ->
+                                LazyColumn(
+                                    state = classListState,
+                                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    items(events, key = { it.id }) { event ->
+                                        val visible = uiState.showCancelledClasses || !event.isCancelled
 
-                                    AnimatedVisibility(
-                                        visible = visible,
-                                        enter = expandVertically(
-                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
-                                        ) + fadeIn(tween(260)) + scaleIn(
-                                            initialScale = 0.92f,
-                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
-                                        ),
-                                        exit = shrinkVertically(
-                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
-                                        ) + fadeOut(tween(180)) + scaleOut(
-                                            targetScale = 0.92f,
-                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
-                                        )
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.padding(bottom = 14.dp)
+                                        AnimatedVisibility(
+                                            visible = visible,
+                                            enter = expandVertically(
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                            ) + fadeIn(tween(260)) + scaleIn(
+                                                initialScale = 0.92f,
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                            ),
+                                            exit = shrinkVertically(
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                            ) + fadeOut(tween(180)) + scaleOut(
+                                                targetScale = 0.92f,
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
+                                            )
                                         ) {
-                                            if (event.displaySubgroups.size > 1) {
-                                                SubgroupClassCard(
-                                                    event = event,
-                                                    is24HourFormat = uiState.is24HourFormat,
-                                                    onCardClick = { selectedEventForDetail = it }
-                                                )
-                                            } else {
-                                                ClassCard(
-                                                    event = event,
-                                                    is24HourFormat = uiState.is24HourFormat,
-                                                    forceOngoingAnimation = uiState.debugAnimationMode,
-                                                    onCardClick = { selectedEventForDetail = it }
-                                                )
+                                            Box(
+                                                modifier = Modifier.padding(bottom = 14.dp)
+                                            ) {
+                                                if (event.displaySubgroups.size > 1) {
+                                                    SubgroupClassCard(
+                                                        event = event,
+                                                        is24HourFormat = uiState.is24HourFormat,
+                                                        onCardClick = { selectedEventForDetail = it }
+                                                    )
+                                                } else {
+                                                    ClassCard(
+                                                        event = event,
+                                                        is24HourFormat = uiState.is24HourFormat,
+                                                        forceOngoingAnimation = uiState.debugAnimationMode,
+                                                        onCardClick = { selectedEventForDetail = it }
+                                                    )
+                                                }
                                             }
                                         }
                                     }
