@@ -2,12 +2,13 @@ package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -84,7 +85,7 @@ fun ClassDetailDialog(
 
     LaunchedEffect(dialogVisible) {
         if (!dialogVisible) {
-            delay(220L)
+            delay(300L)
             onDismiss()
         }
     }
@@ -126,23 +127,30 @@ fun ClassDetailDialog(
     ) {
         AnimatedVisibility(
             visible = dialogVisible,
-            enter = fadeIn(animationSpec = tween(140)) +
-                scaleIn(
-                    initialScale = 0.90f,
-                    animationSpec = tween(240)
+            enter = fadeIn(animationSpec = tween(100)) +
+                slideInVertically(
+                    initialOffsetY = { fullHeight -> fullHeight },
+                    animationSpec = spring(
+                        dampingRatio = 0.72f,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
                 ),
-            exit = fadeOut(animationSpec = tween(120)) +
-                scaleOut(
-                    targetScale = 0.94f,
-                    animationSpec = tween(180)
+            exit = fadeOut(animationSpec = tween(140)) +
+                slideOutVertically(
+                    targetOffsetY = { fullHeight -> fullHeight },
+                    animationSpec = spring(
+                        dampingRatio = 0.88f,
+                        stiffness = Spring.StiffnessMedium
+                    )
                 )
         ) {
             androidx.compose.material3.Surface(
                 shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp,
+                tonalElevation = 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
                     .widthIn(max = 520.dp)
             ) {
                 Column(
