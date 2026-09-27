@@ -1,6 +1,7 @@
 package com.example.data.repository
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
 import com.example.data.local.AppDatabase
@@ -200,6 +201,12 @@ class ScheduleRepository(
 
     fun getEnabledReminderIds(): Set<String> =
         notificationScheduler.getEnabledReminderIds()
+
+    fun canScheduleExactAlarms(): Boolean =
+        notificationScheduler.canScheduleExactAlarms()
+
+    fun exactAlarmSettingsIntent(): Intent? =
+        notificationScheduler.exactAlarmSettingsIntent()
 
     fun isReminderEnabled(eventId: String): Boolean =
         notificationScheduler.isReminderEnabled(eventId)
