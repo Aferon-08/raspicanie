@@ -237,7 +237,11 @@ fun ScheduleScreen(
                             }
                         },
                         onSimulateChange = { viewModel.simulateChange() },
-                        onRefresh = { viewModel.refreshSchedule() }
+                        onRefresh = { viewModel.refreshSchedule() },
+                        onSwitchGroup = { viewModel.switchGroup(it) },
+                        onAddGroup = { title, url -> viewModel.addSavedGroup(title, url) },
+                        onEditGroup = { id, title, url -> viewModel.editSavedGroup(id, title, url) },
+                        onDeleteGroup = { viewModel.deleteSavedGroup(it) }
                     )
                 }
                 BottomNavTab.SCHEDULE -> {
