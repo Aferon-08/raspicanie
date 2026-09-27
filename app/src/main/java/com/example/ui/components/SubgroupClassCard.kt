@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -79,7 +80,10 @@ fun SubgroupClassCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .graphicsLayerScale(scale)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .clickable { onCardClick(event) },
         shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
@@ -282,8 +286,3 @@ fun SubgroupClassCard(
     }
 }
 
-private fun Modifier.graphicsLayerScale(scale: Float): Modifier =
-    androidx.compose.ui.graphics.graphicsLayer {
-        scaleX = scale
-        scaleY = scale
-    }
