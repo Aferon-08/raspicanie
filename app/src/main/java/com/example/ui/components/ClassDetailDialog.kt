@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -56,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.ClassEvent
 import com.example.data.model.ClassStatus
 import com.example.ui.theme.StatusChangedYellow
@@ -123,224 +125,240 @@ fun ClassDetailDialog(
         .replaceFirstChar { it.uppercase() }
 
     Dialog(
-        onDismissRequest = { dismissWithAnimation() }
+        onDismissRequest = { dismissWithAnimation() },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        AnimatedVisibility(
-            visible = dialogVisible,
-            enter = fadeIn(animationSpec = tween(100)) +
-                slideInVertically(
-                    initialOffsetY = { fullHeight -> fullHeight },
-                    animationSpec = spring(
-                        dampingRatio = 0.72f,
-                        stiffness = Spring.StiffnessMediumLow
-                    )
-                ),
-            exit = fadeOut(animationSpec = tween(140)) +
-                slideOutVertically(
-                    targetOffsetY = { fullHeight -> fullHeight },
-                    animationSpec = spring(
-                        dampingRatio = 0.88f,
-                        stiffness = Spring.StiffnessMedium
-                    )
-                )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 24.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            androidx.compose.material3.Surface(
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .widthIn(max = 520.dp)
+            AnimatedVisibility(
+                visible = dialogVisible,
+                modifier = Modifier.fillMaxWidth(),
+                enter = fadeIn(animationSpec = tween(100)) +
+                    slideInVertically(
+                        initialOffsetY = { fullHeight -> fullHeight },
+                        animationSpec = spring(
+                            dampingRatio = 0.72f,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
+                    ),
+                exit = fadeOut(animationSpec = tween(140)) +
+                    slideOutVertically(
+                        targetOffsetY = { fullHeight -> fullHeight },
+                        animationSpec = spring(
+                            dampingRatio = 0.88f,
+                            stiffness = Spring.StiffnessMedium
+                        )
+                    )
             ) {
-                Column(
+                androidx.compose.material3.Surface(
+                    shape = RoundedCornerShape(
+                        topStart = 28.dp,
+                        topEnd = 28.dp,
+                        bottomStart = 0.dp,
+                        bottomEnd = 0.dp
+                    ),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp)
+                        .widthIn(max = 520.dp)
                 ) {
-                    Column {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                )
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = event.displayLessonType,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(statusColor.copy(alpha = 0.12f))
-                                .padding(horizontal = 10.dp, vertical = 5.dp)
-                        ) {
-                            Text(
-                                text = statusText,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = statusColor
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = event.title,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
+                            .padding(24.dp)
                     ) {
-                        if (event.hasChanges && !event.changeDetails.isNullOrBlank()) {
+                        Column {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(StatusChangedYellow.copy(alpha = 0.15f))
-                                    .padding(12.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.Top) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Info,
-                                        contentDescription = null,
-                                        tint = StatusChangedYellow,
-                                        modifier = Modifier.size(18.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Column {
-                                        Text(
-                                            text = "Изменение в расписании",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = StatusChangedYellow
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = event.displayLessonType,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(statusColor.copy(alpha = 0.12f))
+                                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                            ) {
+                                Text(
+                                    text = statusText,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = statusColor
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = event.title,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            if (event.hasChanges && !event.changeDetails.isNullOrBlank()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(StatusChangedYellow.copy(alpha = 0.15f))
+                                        .padding(12.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.Top) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Info,
+                                            contentDescription = null,
+                                            tint = StatusChangedYellow,
+                                            modifier = Modifier.size(18.dp)
                                         )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = event.changeDetails,
-                                            fontSize = 13.sp,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column {
+                                            Text(
+                                                text = "Изменение в расписании",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = StatusChangedYellow
+                                            )
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = event.changeDetails,
+                                                fontSize = 13.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
                                     }
                                 }
+                                Spacer(modifier = Modifier.height(14.dp))
                             }
-                            Spacer(modifier = Modifier.height(14.dp))
-                        }
 
-                        DetailRow(
-                            icon = Icons.Outlined.AccessTime,
-                            iconTint = MaterialTheme.colorScheme.primary,
-                            label = "Дата и время",
-                            value = dateStr + "\n" +
-                                startStr + " — " + endStr +
-                                " (" + event.durationMinutes + " мин)"
-                        )
-
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                            modifier = Modifier.padding(vertical = 10.dp)
-                        )
-
-                        if (event.location.isNotBlank()) {
                             DetailRow(
-                                icon = Icons.Outlined.MeetingRoom,
+                                icon = Icons.Outlined.AccessTime,
                                 iconTint = MaterialTheme.colorScheme.primary,
-                                label = "Место проведения / Аудитория",
-                                value = event.location
+                                label = "Дата и время",
+                                value = dateStr + "\n" +
+                                    startStr + " — " + endStr +
+                                    " (" + event.durationMinutes + " мин)"
                             )
+
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.outlineVariant,
                                 modifier = Modifier.padding(vertical = 10.dp)
                             )
+
+                            if (event.location.isNotBlank()) {
+                                DetailRow(
+                                    icon = Icons.Outlined.MeetingRoom,
+                                    iconTint = MaterialTheme.colorScheme.primary,
+                                    label = "Место проведения / Аудитория",
+                                    value = event.location
+                                )
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant,
+                                    modifier = Modifier.padding(vertical = 10.dp)
+                                )
+                            }
+
+                            if (event.teacher.isNotBlank()) {
+                                DetailRow(
+                                    icon = Icons.Outlined.Person,
+                                    iconTint = MaterialTheme.colorScheme.secondary,
+                                    label = "Преподаватель",
+                                    value = event.teacher
+                                )
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant,
+                                    modifier = Modifier.padding(vertical = 10.dp)
+                                )
+                            }
+
+                            if (event.description.isNotBlank()) {
+                                DetailRow(
+                                    icon = Icons.Outlined.Description,
+                                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    label = "Дополнительно",
+                                    value = event.description
+                                )
+                            }
                         }
 
-                        if (event.teacher.isNotBlank()) {
-                            DetailRow(
-                                icon = Icons.Outlined.Person,
-                                iconTint = MaterialTheme.colorScheme.secondary,
-                                label = "Преподаватель",
-                                value = event.teacher
-                            )
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                                modifier = Modifier.padding(vertical = 10.dp)
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(18.dp))
 
-                        if (event.description.isNotBlank()) {
-                            DetailRow(
-                                icon = Icons.Outlined.Description,
-                                iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                label = "Дополнительно",
-                                value = event.description
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = { dismissWithAnimation() }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Закрыть")
-                        }
-
-                        if (
-                            status != ClassStatus.COMPLETED &&
-                            status != ClassStatus.CANCELLED
-                        ) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    onToggleReminder(event)
-                                    dismissWithAnimation()
-                                },
-                                colors = if (reminderEnabled) {
-                                    ButtonDefaults.buttonColors(
-                                        containerColor =
-                                            MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor =
-                                            MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
-                                } else {
-                                    ButtonDefaults.buttonColors()
-                                }
+                            TextButton(
+                                onClick = { dismissWithAnimation() }
                             ) {
-                                Icon(
-                                    imageVector = if (reminderEnabled) {
-                                        Icons.Outlined.NotificationsOff
-                                    } else {
-                                        Icons.Outlined.Notifications
+                                Text("Закрыть")
+                            }
+
+                            if (
+                                status != ClassStatus.COMPLETED &&
+                                status != ClassStatus.CANCELLED
+                            ) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        onToggleReminder(event)
+                                        dismissWithAnimation()
                                     },
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    if (reminderEnabled) {
-                                        "Отключить напоминание"
+                                    colors = if (reminderEnabled) {
+                                        ButtonDefaults.buttonColors(
+                                            containerColor =
+                                                MaterialTheme.colorScheme.secondaryContainer,
+                                            contentColor =
+                                                MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
                                     } else {
-                                        "Напомнить за 5 минут"
-                                    },
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                        ButtonDefaults.buttonColors()
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = if (reminderEnabled) {
+                                            Icons.Outlined.NotificationsOff
+                                        } else {
+                                            Icons.Outlined.Notifications
+                                        },
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        if (reminderEnabled) {
+                                            "Отключить напоминание"
+                                        } else {
+                                            "Напомнить за 5 минут"
+                                        },
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
                             }
                         }
                     }
