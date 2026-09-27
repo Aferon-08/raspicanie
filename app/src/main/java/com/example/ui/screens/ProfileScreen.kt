@@ -55,6 +55,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -541,6 +542,8 @@ private fun SavedGroupsCarousel(
                     val liveTranslation = relative * sideGapPx + if (isCurrent) dragOffset else dragOffset * 0.22f
                     val liveDistance = abs(relative.toFloat() + if (isCurrent) progress else progress * 0.18f)
                     val liveScale = (1f - liveDistance * 0.10f).coerceAtLeast(0.84f)
+                    val liveRotation = (-progress * 8f) + relative * 2.5f
+                    val liveAlpha = if (liveDistance > 1.4f) 0f else 1f
                     val animatedTranslation by animateFloatAsState(
                         targetValue = if (isDragging) liveTranslation else relative * sideGapPx,
                         animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f),
@@ -551,8 +554,18 @@ private fun SavedGroupsCarousel(
                         animationSpec = spring(dampingRatio = 0.78f, stiffness = 460f),
                         label = "group_card_scale_$relative"
                     )
+                    val animatedRotation by animateFloatAsState(
+                        targetValue = if (isDragging) liveRotation else relative * 2.5f,
+                        animationSpec = spring(dampingRatio = 0.76f, stiffness = 430f),
+                        label = "group_card_rotation_$relative"
+                    )
+                    val animatedAlpha by animateFloatAsState(
+                        targetValue = if (isDragging) liveAlpha else 1f,
+                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 500f),
+                        label = "group_card_alpha_$relative"
+                    )
                     val isNewlyAddedCard = groups.size > previousGroupCount && index == groups.lastIndex
-                    AnimatedVisibility(
+                    androidx.compose.animation.AnimatedVisibility(
                         visible = !isNewlyAddedCard,
                         enter = fadeIn(animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f)) +
                             scaleIn(initialScale = 0.84f, animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)) +
@@ -564,8 +577,9 @@ private fun SavedGroupsCarousel(
                         modifier = Modifier
                             .width(cardWidth)
                             .align(Alignment.Center)
-                            .zIndex(if (isCurrent) 2f else 1f)
-                    ) {
+                            .zIndex(if (isCurrent) 2f else 1f),
+                        content = {
+
                         GroupCarouselCard(
                             group = group,
                             isCurrent = isCurrent,
@@ -573,6 +587,9 @@ private fun SavedGroupsCarousel(
                                 translationX = animatedTranslation
                                 scaleX = animatedScale
                                 scaleY = animatedScale
+                                rotationY = animatedRotation
+                                cameraDistance = 14f * density.density
+                                alpha = animatedAlpha
                             },
                             onEdit = { onEdit(group) }
                         )
@@ -727,6 +744,7 @@ private fun GroupEditorDialog(
                         Text("Сохранить")
                     }
                 }
+            }
             }
         }
     }
