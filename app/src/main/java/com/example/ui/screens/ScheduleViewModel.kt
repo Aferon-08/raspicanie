@@ -12,6 +12,7 @@ import com.example.data.model.ClassEvent
 import com.example.data.model.ClassStatus
 import com.example.data.model.ScheduleChange
 import com.example.data.repository.ScheduleRepository
+import com.example.data.repository.SavedGroup
 import com.example.data.repository.SyncResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -61,7 +62,8 @@ data class ScheduleUiState(
     val debugAnimationMode: Boolean = false,
     val notes: Map<String, String> = emptyMap(),
     val missedClasses: Set<String> = emptySet(),
-    val reminderEventIds: Set<String> = emptySet()
+    val reminderEventIds: Set<String> = emptySet(),
+    val savedGroups: List<SavedGroup> = emptyList()
 )
 
 class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
@@ -84,7 +86,8 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             debugAnimationMode = repository.debugAnimationMode,
             notes = repository.getNotes(),
             missedClasses = repository.getMissedClasses(),
-            reminderEventIds = repository.getEnabledReminderIds()
+            reminderEventIds = repository.getEnabledReminderIds(),
+            savedGroups = repository.getSavedGroups()
         )
     )
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
@@ -228,6 +231,80 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = _uiState.value.copy(groupTitle = title)
     }
 
+    fun switchGroup(groupId: String) {
+        val group = repository.switchGroup(groupId) ?: return
+        _uiState.value = _uiState.value.copy(
+            groupId = group.id,
+            groupTitle = group.title,
+            customUrl = group.url,
+            selectedDateMillis = getTodayStartMillis(),
+            savedGroups = repository.getSavedGroups(),
+            syncFeedback = null
+        )
+        refreshSchedule()
+    }
+
+    fun addSavedGroup(title: String, url: String) {
+        viewModelScope.launch {
+            runCatching {
+                repository.addGroup(title, url)
+            }.onSuccess { group ->
+                _uiState.value = _uiState.value.copy(
+                    groupId = group.id,
+                    groupTitle = group.title,
+                    customUrl = group.url,
+                    selectedDateMillis = getTodayStartMillis(),
+                    savedGroups = repository.getSavedGroups(),
+                    syncFeedback = null
+                )
+                refreshSchedule()
+            }.onFailure { error ->
+                _uiState.value = _uiState.value.copy(
+                    syncFeedback = error.message ?: "Не удалось добавить группу"
+                )
+            }
+        }
+    }
+
+    fun editSavedGroup(groupId: String, title: String, url: String) {
+        viewModelScope.launch {
+            runCatching {
+                repository.updateSavedGroup(groupId, title, url)
+            }.onSuccess { updated ->
+                if (updated != null && updated.id == repository.getActiveGroup().id) {
+                    _uiState.value = _uiState.value.copy(
+                        groupTitle = updated.title,
+                        customUrl = updated.url
+                    )
+                    refreshSchedule()
+                }
+                _uiState.value = _uiState.value.copy(savedGroups = repository.getSavedGroups())
+            }.onFailure { error ->
+                _uiState.value = _uiState.value.copy(
+                    syncFeedback = error.message ?: "Не удалось сохранить группу"
+                )
+            }
+        }
+    }
+
+    fun deleteSavedGroup(groupId: String) {
+        val wasActive = repository.getActiveGroup().id == groupId
+        if (!repository.deleteGroup(groupId)) {
+            _uiState.value = _uiState.value.copy(syncFeedback = "Нельзя удалить единственную сохранённую группу")
+            return
+        }
+        if (wasActive) {
+            val active = repository.getActiveGroup()
+            _uiState.value = _uiState.value.copy(
+                groupId = active.id,
+                groupTitle = active.title,
+                customUrl = active.url
+            )
+            refreshSchedule()
+        }
+        _uiState.value = _uiState.value.copy(savedGroups = repository.getSavedGroups())
+    }
+
     fun selectDate(dateMillis: Long) {
         _uiState.value = _uiState.value.copy(selectedDateMillis = dateMillis)
     }
@@ -292,6 +369,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     _uiState.value = _uiState.value.copy(isSyncing = false, syncFeedback = result.message)
                 }
             }
+            _uiState.value = _uiState.value.copy(savedGroups = repository.getSavedGroups())
         }
     }
 
