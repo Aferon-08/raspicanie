@@ -6,7 +6,6 @@ import android.util.Log
 import com.example.data.local.AppDatabase
 import com.example.data.local.ChangeEntity
 import com.example.data.local.ScheduleEntity
-import com.example.data.model.ChangeType
 import com.example.data.model.ClassEvent
 import com.example.data.model.ScheduleChange
 import com.example.data.remote.CalendarRemoteDataSource
@@ -14,10 +13,7 @@ import com.example.data.remote.IcsParser
 import com.example.notifications.NotificationScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 sealed interface SyncResult {
     data object Success : SyncResult
@@ -43,6 +39,10 @@ class ScheduleRepository(
         const val PREF_LEAD_TIME = "pref_lead_time"
         const val PREF_IS_24_HOUR = "pref_is_24_hour"
         const val DEFAULT_LEAD_TIME = 15
+        const val PREF_THEME_MODE = "pref_theme_mode"
+        const val PREF_DYNAMIC_COLOR = "pref_dynamic_color"
+        const val PREF_NOTES = "pref_notes"
+        const val PREF_MISSED_CLASSES = "pref_missed_classes"
     }
 
     var groupId: String
@@ -60,6 +60,33 @@ class ScheduleRepository(
     var is24HourFormat: Boolean
         get() = prefs.getBoolean(PREF_IS_24_HOUR, true)
         set(value) = prefs.edit().putBoolean(PREF_IS_24_HOUR, value).apply()
+
+
+    var themeMode: String
+        get() = prefs.getString(PREF_THEME_MODE, "SYSTEM") ?: "SYSTEM"
+        set(value) = prefs.edit().putString(PREF_THEME_MODE, value).apply()
+
+    var dynamicColor: Boolean
+        get() = prefs.getBoolean(PREF_DYNAMIC_COLOR, true)
+        set(value) = prefs.edit().putBoolean(PREF_DYNAMIC_COLOR, value).apply()
+
+    fun getNotes(): Map<String, String> = runCatching {
+        val json = org.json.JSONObject(prefs.getString(PREF_NOTES, "{}") ?: "{}")
+        json.keys().asSequence().associateWith { key -> json.optString(key) }
+    }.getOrDefault(emptyMap())
+
+    fun saveNotes(notes: Map<String, String>) {
+        val json = org.json.JSONObject()
+        notes.forEach { (key, value) -> json.put(key, value) }
+        prefs.edit().putString(PREF_NOTES, json.toString()).apply()
+    }
+
+    fun getMissedClasses(): Set<String> =
+        prefs.getStringSet(PREF_MISSED_CLASSES, emptySet())?.toSet() ?: emptySet()
+
+    fun saveMissedClasses(ids: Set<String>) {
+        prefs.edit().putStringSet(PREF_MISSED_CLASSES, ids).apply()
+    }
 
     fun updateSettings(newGroupId: String, newCustomUrl: String?, newLeadTimeMinutes: Int) {
         groupId = newGroupId
@@ -137,93 +164,17 @@ class ScheduleRepository(
             return SyncResult.Error("Календарь пуст или не содержит занятий")
         }
 
-        // Diff engine: compare with existing DB events to detect modifications
         val oldEvents = database.scheduleDao().getAllEventsList().associateBy { it.id }
-        val newChanges = mutableListOf<ChangeEntity>()
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val diff = ScheduleDiff.calculate(oldEvents, parsedEvents)
+        val newChanges = diff.changes.map(ChangeEntity::fromDomain)
 
-        val enrichedEvents = parsedEvents.map { newEv ->
-            val oldEv = oldEvents[newEv.id]
-            var hasChange = false
-            var changeDetail: String? = null
-
-            if (oldEv != null) {
-                // Compare start time
-                if (oldEv.startTimeMillis != newEv.startTimeMillis) {
-                    hasChange = true
-                    val oldTime = timeFormat.format(Date(oldEv.startTimeMillis))
-                    val newTime = timeFormat.format(Date(newEv.startTimeMillis))
-                    val detail = "Время изменено с $oldTime на $newTime"
-                    changeDetail = detail
-                    newChanges.add(
-                        ChangeEntity(
-                            eventId = newEv.id,
-                            eventTitle = newEv.title,
-                            changeType = ChangeType.TIME_CHANGED.name,
-                            detectedAtMillis = System.currentTimeMillis(),
-                            details = detail,
-                            eventDateMillis = newEv.startTimeMillis
-                        )
-                    )
-                }
-
-                // Compare cancellation
-                if (!oldEv.isCancelled && newEv.isCancelled) {
-                    hasChange = true
-                    val detail = "Занятие отменено"
-                    changeDetail = detail
-                    newChanges.add(
-                        ChangeEntity(
-                            eventId = newEv.id,
-                            eventTitle = newEv.title,
-                            changeType = ChangeType.CANCELLED.name,
-                            detectedAtMillis = System.currentTimeMillis(),
-                            details = detail,
-                            eventDateMillis = newEv.startTimeMillis
-                        )
-                    )
-                }
-
-                // Compare location
-                if (oldEv.location.isNotBlank() && newEv.location.isNotBlank() && oldEv.location != newEv.location) {
-                    hasChange = true
-                    val detail = "Кабинет изменен: ${newEv.location} (ранее: ${oldEv.location})"
-                    changeDetail = detail
-                    newChanges.add(
-                        ChangeEntity(
-                            eventId = newEv.id,
-                            eventTitle = newEv.title,
-                            changeType = ChangeType.LOCATION_CHANGED.name,
-                            detectedAtMillis = System.currentTimeMillis(),
-                            details = detail,
-                            eventDateMillis = newEv.startTimeMillis
-                        )
-                    )
-                }
-            } else if (oldEvents.isNotEmpty() && newEv.startTimeMillis > System.currentTimeMillis()) {
-                // New event added in future
-                hasChange = true
-                val timeStr = timeFormat.format(Date(newEv.startTimeMillis))
-                val detail = "Добавлено новое занятие на $timeStr"
-                changeDetail = detail
-                newChanges.add(
-                    ChangeEntity(
-                        eventId = newEv.id,
-                        eventTitle = newEv.title,
-                        changeType = ChangeType.NEW_CLASS.name,
-                        detectedAtMillis = System.currentTimeMillis(),
-                        details = detail,
-                        eventDateMillis = newEv.startTimeMillis
-                    )
-                )
-            }
-
-            ScheduleEntity.fromDomain(
-                newEv.copy(hasChanges = hasChange, changeDetails = changeDetail)
-            )
+        // Cancel alarms for events removed from the remote calendar before replacing the DB.
+        // Their old rows disappear during the transaction, so they cannot be found afterwards.
+        if (diff.removedEventIds.isNotEmpty()) {
+            notificationScheduler.cancelAlarms(diff.removedEventIds)
         }
 
-        database.scheduleDao().updateScheduleWithDiff(enrichedEvents, newChanges)
+        database.scheduleDao().updateScheduleWithDiff(diff.events, newChanges)
 
         // Reschedule alarms for upcoming classes
         rescheduleUpcomingNotifications()
