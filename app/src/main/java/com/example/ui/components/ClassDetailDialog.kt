@@ -201,7 +201,7 @@ fun ClassDetailDialog(
                                     dragOffsetY = (dragOffsetY + dragAmount).coerceAtLeast(0f)
                                 },
                                 onDragEnd = {
-                                    if (dragOffsetY > 180.dp.toPx(density)) {
+                                    if (dragOffsetY > with(density) { 180.dp.toPx() }) {
                                         dismissWithAnimation()
                                     } else {
                                         resetDrag()
