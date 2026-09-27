@@ -175,7 +175,7 @@ class ScheduleRepository(
             notificationScheduler.cancelAlarms(diff.removedEventIds)
         }
 
-        database.scheduleDao().updateScheduleWithDiff(diff.events, newChanges)
+        database.scheduleDao().updateScheduleWithDiff(diff.events.map(ScheduleEntity::fromDomain), newChanges)
 
         // Reschedule alarms for upcoming classes
         rescheduleUpcomingNotifications()
