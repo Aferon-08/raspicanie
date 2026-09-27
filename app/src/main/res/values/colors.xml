@@ -7,7 +7,4 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <!-- Material You dynamic colors used by the adaptive launcher icon. -->
-    <color name="icon_background">?attr/colorPrimaryContainer</color>
-    <color name="icon_foreground">?attr/colorOnPrimaryContainer</color>
 </resources>
