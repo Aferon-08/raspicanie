@@ -197,6 +197,7 @@ fun ClassDetailDialog(
                         .fillMaxWidth()
                         .widthIn(max = 520.dp)
                         .fillMaxHeight()
+                        .padding(top = 0.dp)
                         .pointerInput(event.id) {
                             detectVerticalDragGestures(
                                 onVerticalDrag = { change, dragAmount ->
@@ -385,7 +386,7 @@ fun ClassDetailDialog(
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 0.dp),
+                                    .padding(bottom = 16.dp),
                                 colors = if (reminderEnabled) {
                                     ButtonDefaults.buttonColors(
                                         containerColor =
