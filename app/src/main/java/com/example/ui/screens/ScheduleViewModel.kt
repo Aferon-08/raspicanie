@@ -11,6 +11,7 @@ import com.example.data.model.ChangeType
 import com.example.data.model.ClassEvent
 import com.example.data.model.ClassStatus
 import com.example.data.model.ScheduleChange
+import com.example.data.model.SubgroupInfo
 import com.example.data.repository.ScheduleRepository
 import com.example.data.repository.SavedGroup
 import com.example.data.repository.SyncResult
@@ -44,6 +45,60 @@ enum class ThemeMode {
     SYSTEM,
     DARK,
     LIGHT
+}
+
+/**
+ * Parallel subgroup events have the same subject and time, but different teachers/rooms.
+ * Keep them as one visual lesson so the day is counted by lessons rather than subgroup rows.
+ */
+private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
+    if (events.size < 2) return events
+
+    return events
+        .groupBy { event ->
+            val normalizedTitle = event.title.trim().lowercase().replace(Regex("\\s+"), " ")
+            Triple(normalizedTitle, event.startTimeMillis, event.endTimeMillis)
+        }
+        .values
+        .flatMap { group ->
+            if (group.size < 2) return@flatMap group
+
+            val subgroupRows = group.mapIndexed { index, event ->
+                val source = event.displaySubgroups.firstOrNull()
+                SubgroupInfo(
+                    number = source?.number?.takeIf { it.isNotBlank() } ?: (index + 1).toString(),
+                    teacher = source?.teacher?.takeIf { it.isNotBlank() } ?: event.teacher,
+                    room = source?.room?.takeIf { it.isNotBlank() } ?: event.location
+                )
+            }.filter { it.teacher.isNotBlank() || it.room.isNotBlank() }
+
+            val hasDistinctDetails = subgroupRows
+                .map { it.teacher.trim().lowercase() to it.room.trim().lowercase() }
+                .distinct()
+                .size > 1
+
+            if (!hasDistinctDetails || subgroupRows.size < 2) {
+                return@flatMap group
+            }
+
+            val first = group.first()
+            listOf(
+                first.copy(
+                    teacher = subgroupRows.firstOrNull()?.teacher ?: first.teacher,
+                    location = subgroupRows.firstOrNull()?.room ?: first.location,
+                    isCancelled = group.all { it.isCancelled },
+                    hasChanges = group.any { it.hasChanges },
+                    changeDetails = group.mapNotNull { it.changeDetails?.takeIf(String::isNotBlank) }
+                        .distinct()
+                        .joinToString("\n")
+                        .ifBlank { null },
+                    subgroups = subgroupRows.mapIndexed { index, row ->
+                        row.copy(number = (index + 1).toString())
+                    }
+                )
+            )
+        }
+        .sortedBy { it.startTimeMillis }
 }
 
 data class ScheduleUiState(
@@ -137,7 +192,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             } else {
                 true
             }
-        }.sortedBy { it.startTimeMillis }
+        }.let(::mergeSubgroupEvents)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Same selected-day filtering as dayEvents, but keeps cancelled classes in the list
@@ -171,14 +226,14 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             } else {
                 true
             }
-        }.sortedBy { it.startTimeMillis }
+        }.let(::mergeSubgroupEvents)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Class count per day for badges on DaySelectorStrip
     val classCountByDay: StateFlow<Map<Long, Int>> = allEvents.combine(_uiState) { events, state ->
         val map = mutableMapOf<Long, Int>()
         val cal = com.example.util.ScheduleTimeFormatter.getCalendar()
-        events.forEach { ev ->
+        mergeSubgroupEvents(events).forEach { ev ->
             if (!state.showCancelledClasses && ev.isCancelled) return@forEach
             cal.timeInMillis = ev.startTimeMillis
             cal.set(Calendar.HOUR_OF_DAY, 0)
