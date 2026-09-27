@@ -188,8 +188,7 @@ fun ScheduleScreen(
     }
 
     Scaffold(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
@@ -204,9 +203,7 @@ fun ScheduleScreen(
             targetState = uiState.currentTab,
             transitionSpec = { (fadeIn(tween(220)) + scaleIn(initialScale = 0.96f, animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f))) togetherWith (fadeOut(tween(140)) + scaleOut(targetScale = 1.03f, animationSpec = spring(dampingRatio = 0.8f, stiffness = 460f))) },
             label = "tab_content_transition",
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) { currentTab ->
             when (currentTab) {
                 BottomNavTab.PASSES -> {
@@ -249,44 +246,22 @@ fun ScheduleScreen(
                     )
                 }
                 BottomNavTab.SCHEDULE -> {
-                    // MAIN SCHEDULE SCREEN matching screenshots 1 & 2
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // 1. Top Bar: "Расписание" + Subtitle + Group Avatar Button
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .statusBarsPadding()
-                                .padding(horizontal = 20.dp, vertical = 6.dp),
+                            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { viewModel.selectTab(BottomNavTab.PROFILE) }
+                                modifier = Modifier.weight(1f).clickable { viewModel.selectTab(BottomNavTab.PROFILE) }
                             ) {
-                                Text(
-                                    text = "Расписание",
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                Text("Расписание", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                 Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = uiState.groupTitle,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Text(uiState.groupTitle, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
 
-                            // Compact cancelled-classes toggle.
                             val cancelledToggleColor by animateColorAsState(
-                                targetValue = if (uiState.showCancelledClasses) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceContainerHighest
-                                },
+                                targetValue = if (uiState.showCancelledClasses) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
                                 animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f),
                                 label = "cancelled_toggle_color"
                             )
@@ -303,23 +278,15 @@ fun ScheduleScreen(
 
                             Box(
                                 contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .graphicsLayer {
-                                        scaleX = cancelledToggleScale
-                                        scaleY = cancelledToggleScale
-                                        rotationZ = cancelledToggleRotation
-                                    }
-                                    .clip(RoundedCornerShape(15.dp))
-                                    .background(cancelledToggleColor)
-                                    .clickable {
-                                        val wasAtTop = classListState.firstVisibleItemIndex == 0 &&
-                                            classListState.firstVisibleItemScrollOffset < 12
-                                        viewModel.setShowCancelledClasses(!uiState.showCancelledClasses)
-                                        if (wasAtTop) {
-                                            scheduleScope.launch { classListState.scrollToItem(0) }
-                                        }
-                                    }
+                                modifier = Modifier.size(44.dp).graphicsLayer {
+                                    scaleX = cancelledToggleScale
+                                    scaleY = cancelledToggleScale
+                                    rotationZ = cancelledToggleRotation
+                                }.clip(RoundedCornerShape(15.dp)).background(cancelledToggleColor).clickable {
+                                    val wasAtTop = classListState.firstVisibleItemIndex == 0 && classListState.firstVisibleItemScrollOffset < 12
+                                    viewModel.setShowCancelledClasses(!uiState.showCancelledClasses)
+                                    if (wasAtTop) scheduleScope.launch { classListState.scrollToItem(0) }
+                                }
                             ) {
                                 if (uiState.isSyncing) {
                                     CircularProgressIndicator(
@@ -330,22 +297,12 @@ fun ScheduleScreen(
                                 } else {
                                     Icon(
                                         imageVector = Icons.Outlined.EventBusy,
-                                        contentDescription = if (uiState.showCancelledClasses) {
-                                            "Скрыть отменённые занятия"
-                                        } else {
-                                            "Показать отменённые занятия"
-                                        },
-                                        tint = if (uiState.showCancelledClasses) {
-                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                        modifier = Modifier
-                                            .size(22.dp)
-                                            .graphicsLayer {
-                                                scaleX = 1.06f
-                                                scaleY = 1.06f
-                                            }
+                                        contentDescription = if (uiState.showCancelledClasses) "Скрыть отменённые занятия" else "Показать отменённые занятия",
+                                        tint = if (uiState.showCancelledClasses) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(22.dp).graphicsLayer {
+                                            scaleX = 1.06f
+                                            scaleY = 1.06f
+                                        }
                                     )
                                 }
                             }
@@ -353,7 +310,6 @@ fun ScheduleScreen(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // 2. Day Selector Strip (matching screenshots)
                         DaySelectorStrip(
                             selectedDateMillis = uiState.selectedDateMillis,
                             onDateSelected = { viewModel.selectDate(it) },
@@ -362,11 +318,8 @@ fun ScheduleScreen(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // 3. Day Summary Row ("Сегодня", "среда, 16 сентября", "4 пары", "08:15—14:25")
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Bottom
                         ) {
@@ -376,37 +329,20 @@ fun ScheduleScreen(
                                 label = "day_header_title"
                             ) { title ->
                                 Column(modifier = Modifier.weight(1f, fill = false)) {
-                                    Text(
-                                        text = title,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = dayHeaderSubtitle,
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(text = dayHeaderSubtitle, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
 
                             if (dayEvents.isNotEmpty()) {
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = pairsWord,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                Text(text = pairsWord, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Cancelled-class filter is now a compact animated action in the bottom bar.
-
-                        // 4. Classes List
                         AnimatedContent(
                             targetState = uiState.selectedDateMillis to dayEventsIncludingCancelled,
                             contentKey = { state -> state.first },
@@ -419,18 +355,12 @@ fun ScheduleScreen(
                                     !initialHasEvents && targetHasEvents -> {
                                         (
                                             slideInVertically(
-                                                animationSpec = spring(
-                                                    dampingRatio = 0.78f,
-                                                    stiffness = 360f
-                                                )
+                                                animationSpec = spring(dampingRatio = 0.78f, stiffness = 360f)
                                             ) { fullHeight -> fullHeight } +
                                                 fadeIn(tween(180)) +
                                                 scaleIn(
                                                     initialScale = 0.96f,
-                                                    animationSpec = spring(
-                                                        dampingRatio = 0.78f,
-                                                        stiffness = 380f
-                                                    )
+                                                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 380f)
                                                 )
                                         ) togetherWith fadeOut(tween(120))
                                     }
@@ -438,18 +368,12 @@ fun ScheduleScreen(
                                     initialHasEvents && !targetHasEvents -> {
                                         fadeIn(tween(180)) togetherWith (
                                             slideOutVertically(
-                                                animationSpec = spring(
-                                                    dampingRatio = 0.82f,
-                                                    stiffness = 360f
-                                                )
+                                                animationSpec = spring(dampingRatio = 0.82f, stiffness = 360f)
                                             ) { fullHeight -> fullHeight } +
                                                 fadeOut(tween(140)) +
                                                 scaleOut(
                                                     targetScale = 0.96f,
-                                                    animationSpec = spring(
-                                                        dampingRatio = 0.82f,
-                                                        stiffness = 380f
-                                                    )
+                                                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)
                                                 )
                                         )
                                     }
@@ -458,76 +382,48 @@ fun ScheduleScreen(
                                         (
                                             if (movingForward) {
                                                 slideInHorizontally(
-                                                    animationSpec = spring(
-                                                        dampingRatio = 0.82f,
-                                                        stiffness = 380f
-                                                    )
+                                                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)
                                                 ) { fullWidth -> fullWidth }
                                             } else {
                                                 slideInHorizontally(
-                                                    animationSpec = spring(
-                                                        dampingRatio = 0.82f,
-                                                        stiffness = 380f
-                                                    )
+                                                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)
                                                 ) { fullWidth -> -fullWidth }
                                             }
                                         ) + fadeIn(tween(160)) togetherWith (
                                             if (movingForward) {
                                                 slideOutHorizontally(
-                                                    animationSpec = spring(
-                                                        dampingRatio = 0.86f,
-                                                        stiffness = 360f
-                                                    )
+                                                    animationSpec = spring(dampingRatio = 0.86f, stiffness = 360f)
                                                 ) { fullWidth -> -fullWidth }
                                             } else {
                                                 slideOutHorizontally(
-                                                    animationSpec = spring(
-                                                        dampingRatio = 0.86f,
-                                                        stiffness = 360f
-                                                    )
+                                                    animationSpec = spring(dampingRatio = 0.86f, stiffness = 360f)
                                                 ) { fullWidth -> fullWidth }
                                             }
                                         ) + fadeOut(tween(120))
                                     }
-                                    else -> {
-                                        fadeIn(tween(140)) togetherWith fadeOut(tween(100))
-                                    }
+
+                                    else -> fadeIn(tween(140)) togetherWith fadeOut(tween(100))
                                 }
                             },
                             label = "day_classes_content_transition",
                             modifier = Modifier.weight(1f)
-                        ) { events ->
+                        ) { state ->
+                            val events = state.second
                             if (events.isEmpty()) {
                                 Box(
                                     contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(32.dp)
+                                    modifier = Modifier.fillMaxSize().padding(32.dp)
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = "Занятий нет",
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
+                                        Text("Занятий нет", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                         Spacer(modifier = Modifier.height(6.dp))
-                                        Text(
-                                            text = "В этот день у группы нет запланированных пар",
-                                            fontSize = 14.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        Text("В этот день у группы нет запланированных пар", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             } else {
                                 LazyColumn(
                                     state = classListState,
-                                    contentPadding = PaddingValues(
-                                        start = 20.dp,
-                                        end = 20.dp,
-                                        top = 4.dp,
-                                        bottom = 24.dp
-                                    ),
+                                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     items(events, key = { it.id }) { event ->
@@ -536,33 +432,19 @@ fun ScheduleScreen(
                                         AnimatedVisibility(
                                             visible = visible,
                                             enter = expandVertically(
-                                                animationSpec = spring(
-                                                    dampingRatio = 0.72f,
-                                                    stiffness = 420f
-                                                )
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
                                             ) + fadeIn(tween(260)) + scaleIn(
                                                 initialScale = 0.92f,
-                                                animationSpec = spring(
-                                                    dampingRatio = 0.72f,
-                                                    stiffness = 420f
-                                                )
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
                                             ),
                                             exit = shrinkVertically(
-                                                animationSpec = spring(
-                                                    dampingRatio = 0.72f,
-                                                    stiffness = 420f
-                                                )
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
                                             ) + fadeOut(tween(180)) + scaleOut(
                                                 targetScale = 0.92f,
-                                                animationSpec = spring(
-                                                    dampingRatio = 0.72f,
-                                                    stiffness = 420f
-                                                )
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)
                                             )
                                         ) {
-                                            Box(
-                                                modifier = Modifier.padding(bottom = 14.dp)
-                                            ) {
+                                            Box(modifier = Modifier.padding(bottom = 14.dp)) {
                                                 if (event.displaySubgroups.size > 1) {
                                                     SubgroupClassCard(
                                                         event = event,
@@ -583,14 +465,12 @@ fun ScheduleScreen(
                                 }
                             }
                         }
-
                     }
                 }
             }
         }
     }
 
-    // Detail Dialog
     selectedEventForDetail?.let { event ->
         ClassDetailDialog(
             event = event,
