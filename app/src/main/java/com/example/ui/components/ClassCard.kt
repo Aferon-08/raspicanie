@@ -212,7 +212,11 @@ fun ClassCard(
     LaunchedEffect(event.id) {
         while (true) {
             liveTimeMillis = System.currentTimeMillis()
-            delay(1_000L)
+            // Status and the displayed remaining minutes only change at a human-visible
+            // cadence. Updating every second forced every visible card to recompose
+            // continuously; five seconds keeps the UI responsive without changing
+            // the visual behavior in any meaningful way.
+            delay(5_000L)
         }
     }
 

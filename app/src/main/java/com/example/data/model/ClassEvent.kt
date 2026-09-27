@@ -97,8 +97,14 @@ data class ClassEvent(
                 .find(text)?.groupValues?.getOrNull(1)?.trim()?.trim('.', ',', ';')
         }
 
+    private val cachedDisplaySubgroups: List<SubgroupInfo> by lazy(LazyThreadSafetyMode.NONE) {
+        buildDisplaySubgroups()
+    }
+
     val displaySubgroups: List<SubgroupInfo>
-        get() {
+        get() = cachedDisplaySubgroups
+
+    private fun buildDisplaySubgroups(): List<SubgroupInfo> {
             if (subgroups.isNotEmpty()) {
                 return subgroups.map { subgroup ->
                     subgroup.copy(
@@ -129,8 +135,8 @@ data class ClassEvent(
                     teachers.forEachIndexed { i, t -> list.add(SubgroupInfo((i + 1).toString(), t, location.ifEmpty { "ауд. —" })) }
                 }
             }
-            return list
-        }
+        return list
+    }
 
     private fun extractTeacherName(): String {
         if (teacher.isNotBlank() && !teacher.trim().matches(Regex("""(?i)подгруппа\s*\d+"""))) {
