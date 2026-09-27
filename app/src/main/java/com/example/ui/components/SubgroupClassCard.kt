@@ -84,7 +84,6 @@ fun SubgroupClassCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .clickable { onCardClick(event) },
         shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isOngoing) 4.dp else 1.dp)
@@ -180,6 +179,15 @@ fun SubgroupClassCard(
                                     MaterialTheme.colorScheme.surfaceContainerHighest
                                 }
                             )
+                            .clickable {
+                                onCardClick(
+                                    event.copy(
+                                        id = event.id + "_subgroup_" + subgroup.number,
+                                        teacher = subgroup.teacher,
+                                        location = subgroup.room.ifBlank { event.location }
+                                    )
+                                )
+                            }
                             .padding(horizontal = 13.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
