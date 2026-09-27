@@ -61,7 +61,7 @@ fun NotesScreen(
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Добавить заметку")
             }
@@ -76,13 +76,12 @@ fun NotesScreen(
         ) {
             Text(
                 text = "Заметки",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = "Задания, конспекты и напоминания к занятиям",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -125,7 +124,7 @@ fun NotesScreen(
                 ) {
                     items(notes.entries.toList(), key = { it.key }) { (key, value) ->
                         Card(
-                            shape = RoundedCornerShape(22.dp),
+                            shape = RoundedCornerShape(28.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                             modifier = Modifier.fillMaxWidth()
                         ) {

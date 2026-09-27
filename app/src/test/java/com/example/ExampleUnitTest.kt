@@ -7,6 +7,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.TimeZone
 
 class ExampleUnitTest {
     @Test
@@ -52,4 +53,33 @@ END:VCALENDAR
         assertTrue(ev2.isCancelled)
         assertEquals(ClassStatus.CANCELLED, ev2.getStatus())
     }
+    @Test
+    fun calendarTimezoneIsUsedForFloatingDateTime() {
+        val previous = TimeZone.getDefault()
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+            val ics = """
+BEGIN:VCALENDAR
+VERSION:2.0
+X-WR-TIMEZONE:Europe/Moscow
+BEGIN:VEVENT
+UID:timezone_test
+SUMMARY:Тест
+DTSTART:20260925T140000
+DTEND:20260925T150000
+END:VEVENT
+END:VCALENDAR
+            """.trimIndent()
+
+            val event = IcsParser.parse(ics).single()
+            val expected = java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss", java.util.Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("Europe/Moscow")
+            }.parse("20260925T140000")!!.time
+
+            assertEquals(expected, event.startTimeMillis)
+        } finally {
+            TimeZone.setDefault(previous)
+        }
+    }
+
 }

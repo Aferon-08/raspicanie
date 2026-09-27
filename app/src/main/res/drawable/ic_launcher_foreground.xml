@@ -1,8 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:width="66dp"
-        android:height="66dp"
-        android:drawable="@drawable/ic_app_icon_1790342333420"
-        android:gravity="center" />
-</layer-list>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Calendar -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.78"
+        android:scaleY="0.78">
+        <path
+            android:fillColor="@color/icon_foreground"
+            android:pathData="M29,25C24.6,25 21,28.6 21,33v42c0,4.4 3.6,8 8,8h50c4.4,0 8,-3.6 8,-8V33c0,-4.4 -3.6,-8 -8,-8H29zM29,31h50c1.1,0 2,0.9 2,2v9H27v-9c0,-1.1 0.9,-2 2,-2zM27,48h54v27c0,1.1 -0.9,2 -2,2H29c-1.1,0 -2,-0.9 -2,-2V48z" />
+        <path
+            android:fillColor="@color/icon_foreground"
+            android:pathData="M31,20h6v14h-6zM71,20h6v14h-6z" />
+    </group>
+
+    <!-- Smaller KEMS mark inside the calendar -->
+    <group
+        android:pivotX="54"
+        android:pivotY="60"
+        android:scaleX="0.44"
+        android:scaleY="0.44">
+        <path
+            android:fillColor="@color/icon_foreground"
+            android:pathData="M17.8944,43.4508H20.8032V54.078L31.2,43.4508H34.9296L26.6208,51.9468L35.3616,64.95H32.1936L24.7344,53.8764L20.8032,57.894V64.95H17.8944Z" />
+        <path
+            android:fillColor="@color/icon_foreground"
+            android:pathData="M36.0672,60.2556Q39.1056,62.9772 42.792,62.9772Q46.5936,62.9772 48.3072,60.9324Q50.0208,58.8876 50.3376,55.446H38.8464V52.998H50.3376Q50.0208,49.5564 48.3072,47.5044Q46.5936,45.4524 42.792,45.4524Q39.1056,45.4524 36.0672,48.174V45.1068Q39.0624,43.062 42.9648,43.062Q47.7888,43.062 50.5968,46.05Q53.4048,49.038 53.4048,54.2076Q53.4048,59.3916 50.5968,62.3796Q47.7888,65.3676 42.9648,65.3676Q39.12,65.3676 36.0672,63.294Z" />
+        <path
+            android:fillColor="@color/icon_foreground"
+            android:pathData="M56.2992,43.4508H60.6336L66.12,58.0812L71.6352,43.4508H75.9696V64.95H73.1328V46.0716L67.5888,60.8172H64.6656L59.1216,46.0716V64.95H56.2992Z" />
+        <path
+            android:fillColor="@color/icon_foreground"
+            android:pathData="M77.6256,54.222Q77.6256,49.038 80.4336,46.05Q83.2416,43.062 88.1232,43.062Q90.0528,43.062 91.7592,43.5732Q93.4656,44.0844 94.9632,45.1068V48.174Q93.4944,46.806 91.8312,46.1292Q90.168,45.4524 88.296,45.4524Q84.6096,45.4524 82.6512,47.706Q80.6928,49.9596 80.6928,54.222Q80.6928,58.47 82.6512,60.7236Q84.6096,62.9772 88.296,62.9772Q90.168,62.9772 91.8312,62.3004Q93.4944,61.6236 94.9632,60.2556V63.294Q93.4368,64.3308 91.7304,64.8492Q90.024,65.3676 88.1232,65.3676Q83.2416,65.3676 80.4336,62.3796Q77.6256,59.3916 77.6256,54.222Z" />
+    </group>
+</vector>

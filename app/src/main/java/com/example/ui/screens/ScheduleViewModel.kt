@@ -11,14 +11,21 @@ import com.example.data.model.ChangeType
 import com.example.data.model.ClassEvent
 import com.example.data.model.ClassStatus
 import com.example.data.model.ScheduleChange
+import com.example.data.model.SubgroupInfo
 import com.example.data.repository.ScheduleRepository
+import com.example.data.repository.SavedGroup
 import com.example.data.repository.SyncResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -41,11 +48,84 @@ enum class ThemeMode {
     LIGHT
 }
 
+/**
+ * Parallel subgroup events are exported as separate calendar entries.
+ * They may have slightly different titles (for example, a subgroup suffix),
+ * so grouping only by the raw title is too strict.
+ */
+private fun subgroupBaseTitle(event: ClassEvent): String {
+    return event.title.trim().lowercase()
+        .replace(Regex("""\s+"""), " ")
+        .replace(Regex("""\s*[\[(]\s*(?:под)?групп(?:а|ы)?\s*[0-9а-я-]+\s*[\])]"""), "")
+        .replace(Regex("""\s*[\[(]\s*(?:группа|гр\.?|подгруппа)\s*[0-9а-я-]+\s*[\])]"""), "")
+        .replace(Regex("""\s*[-–—:]?\s*(?:под)?групп(?:а|ы)?\s*[0-9а-я-]+\s*$"""), "")
+        .replace(Regex("""\s*[-–—:]?\s*(?:группа|гр\.?)\s*[0-9а-я-]+\s*$"""), "")
+        // Calendar feeds often encode parallel lessons as e.g. "Math (Иванов И.И.)"
+        // or "Math - Иванов И.И.". The parser removes the teacher from parentheses,
+        // but other feed variants keep it in the title. Normalize these forms too.
+        .replace(Regex("""\s*\([^()]*\)\s*$"""), "")
+        .replace(Regex("""\s+[-–—:]\s+[^-–—:]+$"""), "")
+        .replace(Regex("""\s+"""), " ")
+        .trim()
+}
+
+private fun hasSubgroupMarker(event: ClassEvent): Boolean {
+    val text = event.title + "\n" + event.description + "\n" + event.rawSummary
+    return Regex("""(?:подгрупп|группа\s*[0-9]|гр\.?\s*[0-9])""", RegexOption.IGNORE_CASE).containsMatchIn(text)
+}
+
+private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
+    if (events.size < 2) return events
+    return events.groupBy { event ->
+        Triple(
+            subgroupBaseTitle(event),
+            // Allow small timestamp differences between parallel calendar entries.
+            event.startTimeMillis / 5_000L,
+            event.endTimeMillis / 5_000L
+        )
+    }.values.flatMap { group ->
+        if (group.size < 2) return@flatMap group
+
+        val rows = group
+            .sortedWith(compareBy<ClassEvent> { it.location }.thenBy { it.teacher }.thenBy { it.id })
+            .mapIndexed { index, event ->
+                val parsed = event.displaySubgroups.firstOrNull()
+                SubgroupInfo(
+                    number = parsed?.number?.takeIf { it.isNotBlank() } ?: (index + 1).toString(),
+                    teacher = parsed?.teacher?.takeIf { it.isNotBlank() } ?: event.teacher,
+                    room = parsed?.room?.takeIf { it.isNotBlank() } ?: event.location
+                )
+            }
+            .filter { it.teacher.isNotBlank() || it.room.isNotBlank() }
+
+        val distinctDetails = rows
+            .map { it.teacher.trim().lowercase() to it.room.trim().lowercase() }
+            .distinct()
+            .size
+        val looksLikeParallelSubgroups =
+            group.any(::hasSubgroupMarker) || (rows.size >= 2 && distinctDetails >= 2)
+
+        if (!looksLikeParallelSubgroups || rows.size < 2) return@flatMap group
+
+        val first = group.first()
+        listOf(first.copy(
+            teacher = "",
+            location = "",
+            isCancelled = group.all { it.isCancelled },
+            hasChanges = group.any { it.hasChanges },
+            changeDetails = group.mapNotNull { it.changeDetails?.takeIf(String::isNotBlank) }
+                .distinct().joinToString("\n").ifBlank { null },
+            subgroups = rows.mapIndexed { index, row -> row.copy(number = (index + 1).toString()) }
+        ))
+    }.sortedBy { it.startTimeMillis }
+}
+
 data class ScheduleUiState(
     val selectedDateMillis: Long,
     val isSyncing: Boolean = false,
     val syncFeedback: String? = null,
     val filter: ClassFilter = ClassFilter.ALL,
+    val showCancelledClasses: Boolean = true,
     val searchQuery: String = "",
     val groupId: String = "41",
     val groupTitle: String = "2423 УИР · 3 курс",
@@ -55,8 +135,11 @@ data class ScheduleUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val is24HourFormat: Boolean = true,
+    val debugAnimationMode: Boolean = false,
     val notes: Map<String, String> = emptyMap(),
-    val missedClasses: Set<String> = emptySet()
+    val missedClasses: Set<String> = emptySet(),
+    val reminderEventIds: Set<String> = emptySet(),
+    val savedGroups: List<SavedGroup> = emptyList()
 )
 
 class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
@@ -64,14 +147,24 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     private val app = application as PlanovoApp
     val repository: ScheduleRepository = app.repository
     private val notificationHelper = app.notificationHelper
+    private var syncJob: Job? = null
 
     private val _uiState = MutableStateFlow(
         ScheduleUiState(
             selectedDateMillis = getTodayStartMillis(),
             groupId = repository.groupId,
+            groupTitle = repository.groupTitle,
             customUrl = repository.customUrl,
             leadTimeMinutes = repository.leadTimeMinutes,
-            is24HourFormat = repository.is24HourFormat
+            themeMode = runCatching { ThemeMode.valueOf(repository.themeMode) }.getOrDefault(ThemeMode.SYSTEM),
+            dynamicColor = repository.dynamicColor,
+            is24HourFormat = repository.is24HourFormat,
+            showCancelledClasses = repository.showCancelledClasses,
+            debugAnimationMode = repository.debugAnimationMode,
+            notes = repository.getNotes(),
+            missedClasses = repository.getMissedClasses(),
+            reminderEventIds = repository.getEnabledReminderIds(),
+            savedGroups = repository.getSavedGroups()
         )
     )
     val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
@@ -82,48 +175,63 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     val allChanges: StateFlow<List<ScheduleChange>> = repository.getAllChanges()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Events for the selected date with filters and search applied
-    val dayEvents: StateFlow<List<ClassEvent>> = combine(allEvents, _uiState) { events, state ->
-        val calSelected = com.example.util.ScheduleTimeFormatter.getCalendar(state.selectedDateMillis)
-        val selYear = calSelected.get(Calendar.YEAR)
-        val selDay = calSelected.get(Calendar.DAY_OF_YEAR)
+    // Normalize/group events once. Previously every derived flow repeated the
+    // subgroup merge and its regular-expression work, so a single state change
+    // could process the entire schedule several times.
+    private val processedEvents: StateFlow<List<ClassEvent>> = allEvents
+        .map(::mergeSubgroupEvents)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-        val calEvent = com.example.util.ScheduleTimeFormatter.getCalendar()
+    // Keep one canonical selected-day pipeline and derive the cancelled-filtered
+    // list from it. This prevents duplicate Calendar/search/regex work.
+    val dayEventsIncludingCancelled: StateFlow<List<ClassEvent>> = combine(processedEvents, _uiState) { events, state ->
+        val selected = com.example.util.ScheduleTimeFormatter.getCalendar(state.selectedDateMillis).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val dayStart = selected.timeInMillis
+        val dayEnd = Calendar.getInstance().apply {
+            timeInMillis = dayStart
+            add(Calendar.DAY_OF_MONTH, 1)
+        }.timeInMillis
         val now = System.currentTimeMillis()
+        val query = state.searchQuery.trim().lowercase().takeIf(String::isNotBlank)
 
-        events.filter { ev ->
-            calEvent.timeInMillis = ev.startTimeMillis
-            val isSameDay = calEvent.get(Calendar.YEAR) == selYear && calEvent.get(Calendar.DAY_OF_YEAR) == selDay
-            if (!isSameDay) return@filter false
-
-            // Filter logic
-            val matchesFilter = when (state.filter) {
-                ClassFilter.ALL -> true
-                ClassFilter.UPCOMING_ONLY -> ev.endTimeMillis > now && !ev.isCancelled
-                ClassFilter.CHANGES_ONLY -> ev.hasChanges || ev.isCancelled
+        events.asSequence()
+            .filter { it.startTimeMillis >= dayStart && it.startTimeMillis < dayEnd }
+            .filter { event ->
+                when (state.filter) {
+                    ClassFilter.ALL -> true
+                    ClassFilter.UPCOMING_ONLY -> event.endTimeMillis > now && !event.isCancelled
+                    ClassFilter.CHANGES_ONLY -> event.hasChanges || event.isCancelled
+                }
             }
-            if (!matchesFilter) return@filter false
-
-            // Search query logic
-            if (state.searchQuery.isNotBlank()) {
-                val q = state.searchQuery.trim().lowercase()
-                val inTitle = ev.title.lowercase().contains(q)
-                val inTeacher = ev.teacher.lowercase().contains(q)
-                val inLocation = ev.location.lowercase().contains(q)
-                val inDesc = ev.description.lowercase().contains(q)
-                inTitle || inTeacher || inLocation || inDesc
-            } else {
-                true
+            .filter { event ->
+                query == null ||
+                    event.title.lowercase().contains(query) ||
+                    event.teacher.lowercase().contains(query) ||
+                    event.location.lowercase().contains(query) ||
+                    event.description.lowercase().contains(query) ||
+                    event.displaySubgroups.any { subgroup ->
+                        subgroup.teacher.lowercase().contains(query) || subgroup.room.lowercase().contains(query)
+                    }
             }
-        }.sortedBy { it.startTimeMillis }
+            .toList()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Class count per day for badges on DaySelectorStrip
-    val classCountByDay: StateFlow<Map<Long, Int>> = allEvents.combine(_uiState) { events, _ ->
-        val map = mutableMapOf<Long, Int>()
+    val dayEvents: StateFlow<List<ClassEvent>> = combine(dayEventsIncludingCancelled, _uiState) { events, state ->
+        if (state.showCancelledClasses) events else events.filterNot(ClassEvent::isCancelled)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Class count per day for badges on DaySelectorStrip.
+    val classCountByDay: StateFlow<Map<Long, Int>> = combine(processedEvents, _uiState) { events, state ->
+        val map = HashMap<Long, Int>(events.size)
         val cal = com.example.util.ScheduleTimeFormatter.getCalendar()
-        events.forEach { ev ->
-            cal.timeInMillis = ev.startTimeMillis
+        events.forEach { event ->
+            if (!state.showCancelledClasses && event.isCancelled) return@forEach
+            cal.timeInMillis = event.startTimeMillis
             cal.set(Calendar.HOUR_OF_DAY, 0)
             cal.set(Calendar.MINUTE, 0)
             cal.set(Calendar.SECOND, 0)
@@ -137,6 +245,15 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     init {
         // Initial sync on app start
         refreshSchedule()
+
+        // Keep the local schedule fresh while the app process is alive.
+        // A request is started approximately once every minute.
+        viewModelScope.launch {
+            while (isActive) {
+                delay(60_000L)
+                refreshSchedule()
+            }
+        }
     }
 
     fun selectTab(tab: BottomNavTab) {
@@ -144,10 +261,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setThemeMode(mode: ThemeMode) {
+        repository.themeMode = mode.name
         _uiState.value = _uiState.value.copy(themeMode = mode)
     }
 
     fun setDynamicColor(enabled: Boolean) {
+        repository.dynamicColor = enabled
         _uiState.value = _uiState.value.copy(dynamicColor = enabled)
     }
 
@@ -156,8 +275,87 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = _uiState.value.copy(is24HourFormat = enabled)
     }
 
+    fun setDebugAnimationMode(enabled: Boolean) {
+        repository.debugAnimationMode = enabled
+        _uiState.value = _uiState.value.copy(debugAnimationMode = enabled)
+    }
+
     fun setGroupTitle(title: String) {
+        repository.groupTitle = title
         _uiState.value = _uiState.value.copy(groupTitle = title)
+    }
+
+    fun switchGroup(groupId: String) {
+        val group = repository.switchGroup(groupId) ?: return
+        syncJob?.cancel()
+        _uiState.value = _uiState.value.copy(
+            groupId = group.id,
+            groupTitle = group.title,
+            customUrl = group.url,
+            selectedDateMillis = getTodayStartMillis(),
+            savedGroups = repository.getSavedGroups(),
+            syncFeedback = null
+        )
+        syncJob = viewModelScope.launch(Dispatchers.IO) {
+            repository.clearChangeLog(group.id)
+            performRefreshSchedule(group.id)
+        }
+    }
+
+    fun addSavedGroup(title: String, url: String) {
+        viewModelScope.launch {
+            runCatching {
+                repository.addGroup(title, url)
+            }.onSuccess {
+                _uiState.value = _uiState.value.copy(
+                    savedGroups = repository.getSavedGroups(),
+                    syncFeedback = null
+                )
+            }.onFailure { error ->
+                _uiState.value = _uiState.value.copy(
+                    syncFeedback = error.message ?: "Не удалось добавить группу"
+                )
+            }
+        }
+    }
+
+    fun editSavedGroup(groupId: String, title: String, url: String) {
+        viewModelScope.launch {
+            runCatching {
+                repository.updateSavedGroup(groupId, title, url)
+            }.onSuccess { updated ->
+                if (updated != null && updated.id == repository.getActiveGroup().id) {
+                    _uiState.value = _uiState.value.copy(
+                        groupTitle = updated.title,
+                        customUrl = updated.url
+                    )
+                    refreshSchedule()
+                }
+                _uiState.value = _uiState.value.copy(savedGroups = repository.getSavedGroups())
+            }.onFailure { error ->
+                _uiState.value = _uiState.value.copy(
+                    syncFeedback = error.message ?: "Не удалось сохранить группу"
+                )
+            }
+        }
+    }
+
+    fun deleteSavedGroup(groupId: String) {
+        val wasActive = repository.getActiveGroup().id == groupId
+        if (!repository.deleteGroup(groupId)) {
+            _uiState.value = _uiState.value.copy(syncFeedback = "Нельзя удалить единственную сохранённую группу")
+            return
+        }
+        if (wasActive) {
+            val active = repository.getActiveGroup()
+            _uiState.value = _uiState.value.copy(
+                groupId = active.id,
+                groupTitle = active.title,
+                customUrl = active.url
+            )
+            refreshSchedule()
+        }
+        _uiState.value = _uiState.value.copy(savedGroups = repository.getSavedGroups())
     }
 
     fun selectDate(dateMillis: Long) {
@@ -166,6 +364,11 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun setFilter(filter: ClassFilter) {
         _uiState.value = _uiState.value.copy(filter = filter)
+    }
+
+    fun setShowCancelledClasses(show: Boolean) {
+        repository.showCancelledClasses = show
+        _uiState.value = _uiState.value.copy(showCancelledClasses = show)
     }
 
     fun setSearchQuery(query: String) {
@@ -183,6 +386,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         } else {
             updated[classId] = note
         }
+        repository.saveNotes(updated)
         _uiState.value = _uiState.value.copy(notes = updated)
     }
 
@@ -193,16 +397,23 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         } else {
             updated.add(classId)
         }
+        repository.saveMissedClasses(updated)
         _uiState.value = _uiState.value.copy(missedClasses = updated)
     }
 
     fun refreshSchedule() {
-        if (_uiState.value.isSyncing) return
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSyncing = true)
-            when (val result = repository.syncSchedule()) {
+        if (syncJob?.isActive == true) return
+        syncJob = viewModelScope.launch(Dispatchers.IO) {
+            performRefreshSchedule(repository.getActiveGroup().id)
+        }
+    }
+
+    private suspend fun performRefreshSchedule(expectedGroupId: String) {
+        _uiState.value = _uiState.value.copy(isSyncing = true)
+        try {
+            when (val result = repository.syncSchedule(expectedGroupId)) {
                 is SyncResult.Success -> {
-                    _uiState.value = _uiState.value.copy(isSyncing = false, syncFeedback = "Расписание актуально")
+                    _uiState.value = _uiState.value.copy(isSyncing = false, syncFeedback = null)
                 }
                 is SyncResult.SuccessWithChanges -> {
                     _uiState.value = _uiState.value.copy(
@@ -217,12 +428,17 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     _uiState.value = _uiState.value.copy(isSyncing = false, syncFeedback = result.message)
                 }
             }
+            _uiState.value = _uiState.value.copy(savedGroups = repository.getSavedGroups())
+        } finally {
+            if (syncJob?.isActive != true) {
+                _uiState.value = _uiState.value.copy(isSyncing = false)
+            }
         }
     }
 
     fun updateSettings(groupId: String, customUrl: String?, leadTimeMinutes: Int, groupTitle: String = _uiState.value.groupTitle) {
         viewModelScope.launch {
-            repository.updateSettings(groupId, customUrl, leadTimeMinutes)
+            repository.updateSettings(groupId, customUrl, leadTimeMinutes, groupTitle)
             _uiState.value = _uiState.value.copy(
                 groupId = groupId,
                 customUrl = customUrl,
@@ -238,21 +454,20 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = _uiState.value.copy(syncFeedback = "Тестовое уведомление отправлено")
     }
 
-    fun setReminderForClass(event: ClassEvent) {
-        val leadTime = _uiState.value.leadTimeMinutes
-        notificationHelper.showClassNotification(
-            eventId = event.id,
-            title = event.title,
-            startTimeMillis = event.startTimeMillis,
-            location = event.location,
-            teacher = event.teacher,
-            leadTimeMinutes = leadTime
-        )
+    fun toggleReminderForClass(event: ClassEvent) {
+        val enabled = repository.toggleReminder(event)
+        val updatedIds = _uiState.value.reminderEventIds.toMutableSet().apply {
+            if (enabled) add(event.id) else remove(event.id)
+        }
         _uiState.value = _uiState.value.copy(
-            syncFeedback = "Уведомление для «${event.title}» активировано за $leadTime мин"
+            reminderEventIds = updatedIds,
+            syncFeedback = if (enabled) {
+                "Напоминание для «" + event.title + "» включено за 5 минут до начала"
+            } else {
+                "Напоминание для «" + event.title + "» отключено"
+            }
         )
     }
-
     fun clearChanges() {
         viewModelScope.launch {
             repository.clearChangeLog()

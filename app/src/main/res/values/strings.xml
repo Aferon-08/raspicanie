@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Planovo Расписание</string>
+    <string name="app_name">КЭМС Расписание</string>
     <string name="schedule_title">Расписание занятий</string>
     <string name="current_class">Текущее занятие</string>
     <string name="next_class">Следующее занятие</string>
