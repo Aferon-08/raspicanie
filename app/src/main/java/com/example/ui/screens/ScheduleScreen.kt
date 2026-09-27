@@ -495,7 +495,7 @@ fun ScheduleScreen(
                                                         event = event,
                                                         is24HourFormat = uiState.is24HourFormat,
                                                         forceOngoingAnimation = uiState.debugAnimationMode,
-                                                        gearAnimationTrigger = gearAnimationTrigger,
+                                                         gearAnimationStartTimeMillis = gearAnimationStartTimeMillis,
                                                         gearAnimationDurationMillis = if (gearAnimationFast) 760 else 1800,
                                                         onCardClick = { selectedEventForDetail = it }
                                                     )
