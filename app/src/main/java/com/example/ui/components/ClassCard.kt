@@ -533,36 +533,95 @@ fun ClassCard(
                     )
                 }
 
-                val teacher = event.displaySubgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() }
-                    ?: event.teacher
-                if (teacher.isNotBlank()) {
+                val subgroups = event.displaySubgroups
+                if (subgroups.size > 1) {
                     Spacer(modifier = Modifier.weight(1f))
                     Spacer(modifier = Modifier.height(14.dp))
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Person,
-                            contentDescription = null,
-                            tint = contentSecondaryColor,
-                            modifier = Modifier.size(19.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = teacher,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = contentPrimaryColor,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        subgroups.forEach { subgroup ->
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = "Подгруппа ${subgroup.number}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = contentSecondaryColor
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Person,
+                                        contentDescription = null,
+                                        tint = contentSecondaryColor,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(7.dp))
+                                    Text(
+                                        text = subgroup.teacher.ifBlank { "Преподаватель не указан" },
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = contentPrimaryColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (subgroup.room.isNotBlank()) {
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Icon(
+                                            imageVector = Icons.Outlined.MeetingRoom,
+                                            contentDescription = null,
+                                            tint = contentSecondaryColor,
+                                            modifier = Modifier.size(17.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = subgroup.room.replace("Кабинет ", "").replace("каб. ", ""),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = contentPrimaryColor,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    val teacher = subgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() } ?: event.teacher
+                    if (teacher.isNotBlank()) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Person,
+                                contentDescription = null,
+                                tint = contentSecondaryColor,
+                                modifier = Modifier.size(19.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = teacher,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = contentPrimaryColor,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }
         }
 
-        if (room.isNotBlank()) {
+        if (room.isNotBlank() && event.displaySubgroups.size <= 1) {
             GearCluster(
                 isOngoing = isOngoing,
                 largeColor = if (isOngoing) {
