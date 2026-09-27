@@ -149,6 +149,7 @@ private fun GearCluster(
     largeColor: Color,
     smallColor: Color,
     animationTrigger: Int = 0,
+    animationDurationMillis: Int = 760,
     modifier: Modifier = Modifier
 ) {
     val transition = rememberInfiniteTransition(label = "gear_rotation")
@@ -181,7 +182,7 @@ private fun GearCluster(
             entranceRotation.animateTo(
                 targetValue = 360f,
                 animationSpec = tween(
-                    durationMillis = 760,
+                    durationMillis = animationDurationMillis,
                     easing = FastOutSlowInEasing
                 )
             )
@@ -221,6 +222,7 @@ fun ClassCard(
     is24HourFormat: Boolean = true,
     forceOngoingAnimation: Boolean = false,
     gearAnimationTrigger: Int = 0,
+    gearAnimationDurationMillis: Int = 760,
     onCardClick: (ClassEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -643,6 +645,7 @@ fun ClassCard(
                     MaterialTheme.colorScheme.tertiary.copy(alpha = 0.78f)
                 },
                 animationTrigger = gearAnimationTrigger,
+                animationDurationMillis = gearAnimationDurationMillis,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .offset(x = 12.dp, y = 8.dp)
