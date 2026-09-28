@@ -8,6 +8,14 @@ plugins {
   alias(libs.plugins.google.services)
 }
 
+kotlin {
+  compilerOptions {
+    // Material 3 Expressive APIs (MaterialExpressiveTheme, MotionScheme, Shapes.largeIncreased, ...)
+    // are still marked experimental; opt in once for the whole module.
+    freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+  }
+}
+
 android {
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
@@ -52,15 +60,6 @@ android {
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
-  }
-  kotlinOptions {
-    // Material 3 Expressive (MaterialExpressiveTheme, MotionScheme, the
-    // expanded Shapes scale with largeIncreased/extraLargeIncreased/
-    // extraExtraLarge) is still marked experimental by the library even
-    // though it's the recommended way to theme new apps. Opting in once
-    // here avoids sprinkling @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    // across every screen and component that reads MaterialTheme.shapes.*.
-    freeCompilerArgs += listOf("-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
   }
   buildFeatures {
     compose = true
