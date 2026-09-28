@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import com.example.ui.theme.largePlus
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -124,7 +125,7 @@ fun NotesScreen(
                 ) {
                     items(notes.entries.toList(), key = { it.key }) { (key, value) ->
                         Card(
-                            shape = MaterialTheme.shapes.largeIncreased,
+                            shape = MaterialTheme.shapes.largePlus,
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -168,7 +169,7 @@ fun NotesScreen(
     if (showAddDialog) {
         Dialog(onDismissRequest = { showAddDialog = false }) {
             Card(
-                shape = MaterialTheme.shapes.largeIncreased,
+                shape = MaterialTheme.shapes.largePlus,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth()
             ) {

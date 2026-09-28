@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import com.example.ui.theme.largePlus
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -77,7 +78,7 @@ fun SubgroupClassCard(
     Card(
         modifier = modifier
             .fillMaxWidth(),
-        shape = MaterialTheme.shapes.largeIncreased,
+        shape = MaterialTheme.shapes.largePlus,
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isOngoing) 4.dp else 1.dp)
     ) {

@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import com.example.ui.theme.largePlus
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -188,7 +189,7 @@ fun ClassDetailDialog(
                     )
             ) {
                 Surface(
-                    shape = MaterialTheme.shapes.largeIncreased.copy(
+                    shape = MaterialTheme.shapes.largePlus.copy(
                         bottomStart = CornerSize(0.dp),
                         bottomEnd = CornerSize(0.dp)
                     ),

@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.os.Build
+import com.example.ui.theme.largePlus
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -197,7 +198,7 @@ fun ProfileScreen(
 
             item {
                 Card(
-                    shape = MaterialTheme.shapes.largeIncreased,
+                    shape = MaterialTheme.shapes.largePlus,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -274,7 +275,7 @@ fun ProfileScreen(
 
             item {
                 Card(
-                    shape = MaterialTheme.shapes.largeIncreased,
+                    shape = MaterialTheme.shapes.largePlus,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -324,7 +325,7 @@ fun ProfileScreen(
 
             item {
                 Card(
-                    shape = MaterialTheme.shapes.largeIncreased,
+                    shape = MaterialTheme.shapes.largePlus,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -707,7 +708,7 @@ private fun GroupEditorDialog(
             contentAlignment = Alignment.Center
         ) {
             Card(
-                shape = MaterialTheme.shapes.largeIncreased,
+                shape = MaterialTheme.shapes.largePlus,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                 modifier = Modifier.fillMaxWidth()
             ) {

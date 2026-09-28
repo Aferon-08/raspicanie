@@ -8,14 +8,6 @@ plugins {
   alias(libs.plugins.google.services)
 }
 
-kotlin {
-  compilerOptions {
-    // Material 3 Expressive APIs (MaterialExpressiveTheme, MotionScheme, Shapes.largeIncreased, ...)
-    // are still marked experimental; opt in once for the whole module.
-    freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
-  }
-}
-
 android {
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }

@@ -285,7 +285,7 @@ fun ScheduleScreen(
                     )
                 }
                 BottomNavTab.SCHEDULE -> {
-                    AnimatedVisibility(
+                    androidx.compose.animation.AnimatedVisibility(
                         visible = scheduleHasAppeared,
                         enter = slideInVertically(
                             animationSpec = spring(
@@ -485,7 +485,7 @@ fun ScheduleScreen(
                                     itemsIndexed(events, key = { _, event -> event.id }) { index, event ->
                                         val visible = uiState.showCancelledClasses || !event.isCancelled
 
-                                        AnimatedVisibility(
+                                        androidx.compose.animation.AnimatedVisibility(
                                             visible = visible,
                                             enter = expandVertically(
                                                 animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f)

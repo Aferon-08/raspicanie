@@ -73,7 +73,7 @@ private data class NavItem(
  * Follows the M3 Expressive "pill" pattern: the selected item grows into a
  * wide rounded pill with an icon + label, while unselected items stay as
  * compact icon-only circles. The whole thing rides on the theme's
- * [androidx.compose.material3.MotionScheme] spring specs so it feels
+ * spring specs so it feels
  * consistent with the rest of the expressive theme rather than using its
  * own bespoke tuning.
  */

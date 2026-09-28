@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.background
+import com.example.ui.theme.largePlus
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,7 +80,7 @@ fun PassesScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Card(
-                shape = MaterialTheme.shapes.largeIncreased,
+                shape = MaterialTheme.shapes.largePlus,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier.weight(1f)
             ) {
