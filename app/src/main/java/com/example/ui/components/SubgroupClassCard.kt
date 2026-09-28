@@ -4,6 +4,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,20 +74,10 @@ fun SubgroupClassCard(
         MaterialTheme.colorScheme.surfaceContainerLow
     }
 
-    val scale by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f),
-        label = "subgroup_card_scale"
-    )
-
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            },
-        shape = RoundedCornerShape(26.dp),
+            .fillMaxWidth(),
+        shape = MaterialTheme.shapes.largeIncreased,
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isOngoing) 4.dp else 1.dp)
     ) {
@@ -143,7 +136,7 @@ fun SubgroupClassCard(
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(MaterialTheme.shapes.small)
                         .background(
                             if (isOngoing) {
                                 MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f)
@@ -168,10 +161,22 @@ fun SubgroupClassCard(
 
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 event.displaySubgroups.forEach { subgroup ->
+                    val rowInteractionSource = remember { MutableInteractionSource() }
+                    val isPressed by rowInteractionSource.collectIsPressedAsState()
+                    val rowScale by animateFloatAsState(
+                        targetValue = if (isPressed) 0.97f else 1f,
+                        animationSpec = spring(dampingRatio = 0.5f, stiffness = 600f),
+                        label = "subgroup_row_scale"
+                    )
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(17.dp))
+                            .graphicsLayer {
+                                scaleX = rowScale
+                                scaleY = rowScale
+                            }
+                            .clip(MaterialTheme.shapes.medium)
                             .background(
                                 if (isOngoing) {
                                     MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.09f)
@@ -179,7 +184,10 @@ fun SubgroupClassCard(
                                     MaterialTheme.colorScheme.surfaceContainerHighest
                                 }
                             )
-                            .clickable {
+                            .clickable(
+                                interactionSource = rowInteractionSource,
+                                indication = null
+                            ) {
                                 onCardClick(
                                     event.copy(
                                         id = event.id + "_subgroup_" + subgroup.number,

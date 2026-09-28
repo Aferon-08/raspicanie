@@ -197,7 +197,7 @@ fun ProfileScreen(
 
             item {
                 Card(
-                    shape = RoundedCornerShape(26.dp),
+                    shape = MaterialTheme.shapes.largeIncreased,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -274,7 +274,7 @@ fun ProfileScreen(
 
             item {
                 Card(
-                    shape = RoundedCornerShape(26.dp),
+                    shape = MaterialTheme.shapes.largeIncreased,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -324,7 +324,7 @@ fun ProfileScreen(
 
             item {
                 Card(
-                    shape = RoundedCornerShape(26.dp),
+                    shape = MaterialTheme.shapes.largeIncreased,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -395,7 +395,7 @@ private fun CurrentGroupCard(
     onManageGroups: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(30.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -421,7 +421,7 @@ private fun CurrentGroupCard(
                     onClick = onManageGroups,
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(MaterialTheme.shapes.extraSmall)
                         .background(MaterialTheme.colorScheme.primaryContainer)
                 ) {
                     Icon(
@@ -447,7 +447,7 @@ private fun SavedGroupsCarousel(
 ) {
     if (groups.isEmpty()) {
         Card(
-            shape = RoundedCornerShape(30.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -638,7 +638,7 @@ private fun GroupCarouselCard(
     onEdit: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(32.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
             containerColor = if (isCurrent) MaterialTheme.colorScheme.surfaceContainerHigh
             else MaterialTheme.colorScheme.surfaceContainer
@@ -707,7 +707,7 @@ private fun GroupEditorDialog(
             contentAlignment = Alignment.Center
         ) {
             Card(
-                shape = RoundedCornerShape(28.dp),
+                shape = MaterialTheme.shapes.largeIncreased,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                 modifier = Modifier.fillMaxWidth()
             ) {

@@ -26,6 +26,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -100,6 +103,7 @@ import com.example.ui.components.ClassCard
 import com.example.ui.components.SubgroupClassCard
 import com.example.ui.components.ClassDetailDialog
 import com.example.ui.components.ExpressiveBottomBar
+import com.example.ui.components.ExpressiveNavigationRail
 import com.example.ui.components.DaySelectorStrip
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -209,23 +213,36 @@ fun ScheduleScreen(
         }
     }
 
+    val isWideScreen = LocalConfiguration.current.screenWidthDp >= 600
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            ExpressiveBottomBar(
+            if (!isWideScreen) {
+                ExpressiveBottomBar(
+                    currentTab = uiState.currentTab,
+                    changesCount = allChanges.size,
+                    onTabSelected = { viewModel.selectTab(it) }
+                )
+            }
+        }
+    ) { innerPadding ->
+      Row(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        if (isWideScreen) {
+            ExpressiveNavigationRail(
                 currentTab = uiState.currentTab,
                 changesCount = allChanges.size,
                 onTabSelected = { viewModel.selectTab(it) }
             )
         }
-    ) { innerPadding ->
+        Box(modifier = Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
         AnimatedContent(
             targetState = uiState.currentTab,
             transitionSpec = { (fadeIn(tween(220)) + scaleIn(initialScale = 0.96f, animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f))) togetherWith (fadeOut(tween(140)) + scaleOut(targetScale = 1.03f, animationSpec = spring(dampingRatio = 0.8f, stiffness = 460f))) },
             label = "tab_content_transition",
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
+            modifier = Modifier.fillMaxHeight().widthIn(max = 840.dp).fillMaxWidth()
         ) { currentTab ->
             when (currentTab) {
                 BottomNavTab.PASSES -> {
@@ -321,7 +338,7 @@ fun ScheduleScreen(
                                     scaleX = cancelledToggleScale
                                     scaleY = cancelledToggleScale
                                     rotationZ = cancelledToggleRotation
-                                }.clip(RoundedCornerShape(15.dp)).background(cancelledToggleColor).clickable {
+                                }.clip(MaterialTheme.shapes.small).background(cancelledToggleColor).clickable {
                                     val wasAtTop = classListState.firstVisibleItemIndex == 0 && classListState.firstVisibleItemScrollOffset < 12
                                     viewModel.setShowCancelledClasses(!uiState.showCancelledClasses)
                                     if (wasAtTop) scheduleScope.launch { classListState.scrollToItem(0) }
@@ -511,6 +528,8 @@ fun ScheduleScreen(
                 }
             }
         }
+        }  // Box
+      }  // Row
     }
 
     selectedEventForDetail?.let { event ->

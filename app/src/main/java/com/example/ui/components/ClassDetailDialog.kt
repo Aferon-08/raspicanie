@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
@@ -187,11 +188,9 @@ fun ClassDetailDialog(
                     )
             ) {
                 Surface(
-                    shape = RoundedCornerShape(
-                        topStart = 28.dp,
-                        topEnd = 28.dp,
-                        bottomStart = 0.dp,
-                        bottomEnd = 0.dp
+                    shape = MaterialTheme.shapes.largeIncreased.copy(
+                        bottomStart = CornerSize(0.dp),
+                        bottomEnd = CornerSize(0.dp)
                     ),
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 8.dp,
@@ -239,7 +238,7 @@ fun ClassDetailDialog(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(10.dp))
+                                        .clip(MaterialTheme.shapes.extraSmall)
                                         .background(
                                             MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                         )
@@ -280,7 +279,7 @@ fun ClassDetailDialog(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .size(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(MaterialTheme.shapes.extraSmall)
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainerHigh
                                     )
@@ -306,7 +305,7 @@ fun ClassDetailDialog(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(14.dp))
+                                        .clip(MaterialTheme.shapes.small)
                                         .background(StatusChangedYellow.copy(alpha = 0.15f))
                                         .padding(12.dp)
                                 ) {
@@ -397,8 +396,7 @@ fun ClassDetailDialog(
                                     )
                                 } else {
                                     ButtonDefaults.buttonColors()
-                                },
-                                shape = RoundedCornerShape(16.dp)
+                                }
                             ) {
                                 Icon(
                                     imageVector = if (reminderEnabled) {

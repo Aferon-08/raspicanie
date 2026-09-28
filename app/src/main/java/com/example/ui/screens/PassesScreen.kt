@@ -79,7 +79,7 @@ fun PassesScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Card(
-                shape = RoundedCornerShape(28.dp),
+                shape = MaterialTheme.shapes.largeIncreased,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier.weight(1f)
             ) {
@@ -100,7 +100,7 @@ fun PassesScreen(
             }
 
             Card(
-                shape = RoundedCornerShape(22.dp),
+                shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 modifier = Modifier.weight(1f)
             ) {
@@ -201,7 +201,7 @@ fun PassesScreen(
                     }
 
                     Card(
-                        shape = RoundedCornerShape(20.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -213,7 +213,7 @@ fun PassesScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(MaterialTheme.shapes.extraSmall)
                                         .background(badgeColor.copy(alpha = 0.18f))
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {

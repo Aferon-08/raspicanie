@@ -61,7 +61,7 @@ fun NotesScreen(
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = RoundedCornerShape(24.dp)
+                shape = MaterialTheme.shapes.large
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Добавить заметку")
             }
@@ -124,7 +124,7 @@ fun NotesScreen(
                 ) {
                     items(notes.entries.toList(), key = { it.key }) { (key, value) ->
                         Card(
-                            shape = RoundedCornerShape(28.dp),
+                            shape = MaterialTheme.shapes.largeIncreased,
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -168,7 +168,7 @@ fun NotesScreen(
     if (showAddDialog) {
         Dialog(onDismissRequest = { showAddDialog = false }) {
             Card(
-                shape = RoundedCornerShape(26.dp),
+                shape = MaterialTheme.shapes.largeIncreased,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth()
             ) {

@@ -345,10 +345,10 @@ fun ClassCard(
                 scaleX = pressScale
                 scaleY = pressScale
             }
-            .clip(RoundedCornerShape(30.dp))
+            .clip(MaterialTheme.shapes.extraLarge)
     ) {
         Card(
-            shape = RoundedCornerShape(30.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             colors = CardDefaults.cardColors(containerColor = cardBackground),
             elevation = CardDefaults.cardElevation(defaultElevation = cardElevation),
             modifier = Modifier
@@ -404,7 +404,7 @@ fun ClassCard(
                     ) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(11.dp))
+                                .clip(MaterialTheme.shapes.extraSmall)
                                 .background(chipBg)
                                 .padding(horizontal = 11.dp, vertical = 4.dp)
                         ) {
@@ -442,7 +442,7 @@ fun ClassCard(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(14.dp))
+                                        .clip(MaterialTheme.shapes.small)
                                         .background(
                                             if (isOngoing) {
                                                 MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)
