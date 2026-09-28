@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MeetingRoom
@@ -137,12 +138,12 @@ fun SubgroupClassCard(
 
                 Box(
                     modifier = Modifier
-                        .clip(MaterialTheme.shapes.small)
+                        .clip(CircleShape)
                         .background(
                             if (isOngoing) {
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f)
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
                             } else {
-                                MaterialTheme.colorScheme.primaryContainer
+                                MaterialTheme.colorScheme.secondaryContainer
                             }
                         )
                         .padding(horizontal = 10.dp, vertical = 7.dp)
@@ -154,7 +155,7 @@ fun SubgroupClassCard(
                         color = if (isOngoing) {
                             MaterialTheme.colorScheme.onPrimary
                         } else {
-                            MaterialTheme.colorScheme.onPrimaryContainer
+                            MaterialTheme.colorScheme.onSecondaryContainer
                         }
                     )
                 }

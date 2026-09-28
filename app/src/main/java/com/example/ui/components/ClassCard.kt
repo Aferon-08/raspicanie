@@ -309,10 +309,19 @@ fun ClassCard(
         label = "class_press_scale"
     )
 
+    // Expressive shape morph: corners tighten while the card is pressed.
+    val cornerRadius by animateDpAsState(
+        targetValue = if (isPressed) 20.dp else 32.dp,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 500f),
+        label = "class_card_corner"
+    )
+    val cardShape = RoundedCornerShape(cornerRadius)
+
     val targetCardBackground = when {
         isOngoing -> MaterialTheme.colorScheme.primary
         isCancelled -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
         isCompleted -> MaterialTheme.colorScheme.surfaceContainerLow
+        isUpcomingSoon -> MaterialTheme.colorScheme.surfaceContainerHigh
         else -> MaterialTheme.colorScheme.surfaceContainer
     }
     val cardBackground by animateColorAsState(
@@ -345,10 +354,10 @@ fun ClassCard(
                 scaleX = pressScale
                 scaleY = pressScale
             }
-            .clip(MaterialTheme.shapes.extraLarge)
+            .clip(cardShape)
     ) {
         Card(
-            shape = MaterialTheme.shapes.extraLarge,
+            shape = cardShape,
             colors = CardDefaults.cardColors(containerColor = cardBackground),
             elevation = CardDefaults.cardElevation(defaultElevation = cardElevation),
             modifier = Modifier
@@ -366,15 +375,14 @@ fun ClassCard(
                     .fillMaxHeight()
                     .padding(horizontal = 20.dp, vertical = 18.dp)
             ) {
-                val chipBg = if (isOngoing) {
-                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f)
-                } else {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                val chipBg = when {
+                    isOngoing -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                    isCancelled -> MaterialTheme.colorScheme.errorContainer
+                    else -> MaterialTheme.colorScheme.secondaryContainer
                 }
-                val chipTextColor = if (isOngoing) {
-                    MaterialTheme.colorScheme.onPrimary
-                } else {
-                    MaterialTheme.colorScheme.primary
+                val chipTextColor = when {
+                    isOngoing -> MaterialTheme.colorScheme.onPrimary
+                    else -> MaterialTheme.colorScheme.onSecondaryContainer
                 }
 
                 Row(
@@ -384,8 +392,9 @@ fun ClassCard(
                     Column(modifier = Modifier.width(68.dp)) {
                         Text(
                             text = startStr,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.3).sp,
                             color = contentPrimaryColor,
                             textDecoration = if (isCancelled) TextDecoration.LineThrough else TextDecoration.None
                         )
@@ -404,15 +413,15 @@ fun ClassCard(
                     ) {
                         Box(
                             modifier = Modifier
-                                .clip(MaterialTheme.shapes.extraSmall)
+                                .clip(CircleShape)
                                 .background(chipBg)
-                                .padding(horizontal = 11.dp, vertical = 4.dp)
+                                .padding(horizontal = 12.dp, vertical = 5.dp)
                         ) {
                             Text(
                                 text = if (isCancelled) "Отменено" else event.displayLessonType,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isCancelled) MaterialTheme.colorScheme.error else chipTextColor
+                                color = if (isCancelled) MaterialTheme.colorScheme.onErrorContainer else chipTextColor
                             )
                         }
 
@@ -525,38 +534,41 @@ fun ClassCard(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 4.dp)
                     ) {
-                        Box(
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .size(7.dp)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.onPrimary)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "СЕЙЧАС ИДЁТ",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "СЕЙЧАС ИДЁТ",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 0.5.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "осталось $remainingMin мин",
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                         )
                     }
 
-                    val targetProgress = event.getProgress(liveTimeMillis)
-                    val animatedProgress by animateFloatAsState(
-                        targetValue = targetProgress,
-                        animationSpec = tween(durationMillis = 950),
-                        label = "lesson_progress"
-                    )
                     SquigglyProgressBar(
-                        progress = animatedProgress,
+                        progress = event.getProgress(liveTimeMillis),
                         activeColor = MaterialTheme.colorScheme.onPrimary,
-                        trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.28f),
+                        trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 } else if (isUpcomingSoon) {
@@ -571,12 +583,16 @@ fun ClassCard(
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Schedule,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -584,7 +600,7 @@ fun ClassCard(
                             text = "Начнётся $timeUntilText",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     }
                 } else if (isCompleted) {
