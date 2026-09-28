@@ -1,18 +1,22 @@
 package com.example.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -31,8 +35,9 @@ import kotlin.math.sin
  *  - a small gap follows it,
  *  - the remaining part is a straight rounded track ending with a dot.
  *
- * The wave amplitude eases in from the start and springs to full size
- * when the indicator appears; progress changes are spring-animated.
+ * When the indicator appears it fills from left to right up to the current
+ * progress while the wave amplitude eases in; later changes (real time) are
+ * animated smoothly.
  */
 @Composable
 fun SquigglyProgressBar(
@@ -52,15 +57,18 @@ fun SquigglyProgressBar(
         label = "wave_phase"
     )
 
-    // Spring on progress and on amplitude (amplitude 0 -> 1 on first composition).
+    // On first appearance the bar fills from 0 to the current progress (left to right);
+    // afterwards it follows the real-time progress smoothly.
+    var appeared by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { appeared = true }
     val animatedProgress by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = spring(dampingRatio = 0.8f, stiffness = 60f),
+        targetValue = if (appeared) progress.coerceIn(0f, 1f) else 0f,
+        animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
         label = "wavy_progress_value"
     )
     val amplitudeFactor by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = spring(dampingRatio = 0.45f, stiffness = 120f),
+        targetValue = if (appeared) 1f else 0f,
+        animationSpec = tween(durationMillis = 800),
         label = "wavy_amplitude"
     )
 
