@@ -12,6 +12,7 @@ import com.example.data.model.ClassEvent
 import com.example.data.model.ClassStatus
 import com.example.data.model.ScheduleChange
 import com.example.data.model.SubgroupInfo
+import com.example.data.model.stripSubgroupMarker
 import com.example.data.repository.ScheduleRepository
 import com.example.data.repository.SavedGroup
 import com.example.data.repository.SyncResult
@@ -146,7 +147,8 @@ private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
                     teacher = resolveSubgroupTeacher(event, index)
                         ?: parsed?.teacher?.takeIf { it.isNotBlank() }
                         ?: event.teacher,
-                    room = parsed?.room?.takeIf { it.isNotBlank() } ?: event.location
+                    room = parsed?.room?.takeIf { it.isNotBlank() } ?: event.location,
+                    title = event.title
                 )
             }
             .filter { it.teacher.isNotBlank() || it.room.isNotBlank() }
@@ -162,6 +164,7 @@ private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
 
         val first = group.first()
         listOf(first.copy(
+            title = stripSubgroupMarker(first.title),
             teacher = "",
             location = "",
             isCancelled = group.all { it.isCancelled },

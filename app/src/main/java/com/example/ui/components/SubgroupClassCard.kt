@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.ClassEvent
 import com.example.data.model.ClassStatus
+import com.example.data.model.stripSubgroupMarker
 import com.example.util.ScheduleTimeFormatter
 
 /**
@@ -116,7 +117,7 @@ fun SubgroupClassCard(
                     Spacer(modifier = Modifier.size(7.dp))
 
                     Text(
-                        text = event.title,
+                        text = stripSubgroupMarker(event.title),
                         fontSize = 22.sp,
                         lineHeight = 26.sp,
                         fontWeight = FontWeight.Bold,
@@ -193,6 +194,7 @@ fun SubgroupClassCard(
                                 onCardClick(
                                     event.copy(
                                         id = event.id + "_subgroup_" + subgroup.number,
+                                        title = subgroup.title.ifBlank { event.title },
                                         teacher = subgroup.teacher,
                                         location = subgroup.room.ifBlank { event.location }
                                     )
