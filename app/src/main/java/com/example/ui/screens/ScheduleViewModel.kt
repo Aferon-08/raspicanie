@@ -74,6 +74,47 @@ private fun hasSubgroupMarker(event: ClassEvent): Boolean {
     return Regex("""(?:подгрупп|группа\s*[0-9]|гр\.?\s*[0-9])""", RegexOption.IGNORE_CASE).containsMatchIn(text)
 }
 
+private val subgroupTeacherLineRegex = Regex(
+    """(?im)(?:под)?групп[аы]?\s*(\d+)\s*[:\-–—)]\s*(.+)$"""
+)
+private val plainTeacherLineRegex = Regex(
+    """(?im)^\s*(?:Преподаватель|Педагог|Тренер|Учитель|Инструктор|Ведущий)\s*:\s*(.+)$"""
+)
+private val subgroupNumberInTitleRegex = Regex("""(?i)(?:под)?групп[аы]?\s*(\d+)""")
+
+private fun cleanTeacherName(raw: String): String =
+    raw.substringBefore("ауд").substringBefore("Ауд")
+        .replace(Regex("""(?i)^\s*преподаватель\s*:\s*"""), "")
+        .trim().trim(',', ';', '.', ' ')
+
+/**
+ * Description of a parallel event may list teachers of ALL subgroups (the same text is repeated
+ * in every calendar entry). Taking the first one gave the same teacher on every subgroup row,
+ * so here we pick the teacher that belongs to this particular event.
+ */
+private fun resolveSubgroupTeacher(event: ClassEvent, indexInGroup: Int): String? {
+    val numbered = subgroupTeacherLineRegex.findAll(event.description)
+        .map { it.groupValues[1] to cleanTeacherName(it.groupValues[2]) }
+        .filter { it.second.isNotBlank() }
+        .toList()
+    val plain = plainTeacherLineRegex.findAll(event.description)
+        .map { cleanTeacherName(it.groupValues[1]) }
+        .filter { it.isNotBlank() }
+        .toList()
+
+    val ownNumber = subgroupNumberInTitleRegex
+        .find(event.title + " " + event.rawSummary)?.groupValues?.getOrNull(1)
+
+    if (numbered.size > 1) {
+        ownNumber?.let { n -> numbered.firstOrNull { it.first == n }?.let { return it.second } }
+        numbered.getOrNull(indexInGroup)?.let { return it.second }
+    }
+    if (plain.size > 1) {
+        plain.getOrNull(indexInGroup)?.let { return it }
+    }
+    return null
+}
+
 private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
     if (events.size < 2) return events
     return events.groupBy { event ->
@@ -92,7 +133,9 @@ private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
                 val parsed = event.displaySubgroups.firstOrNull()
                 SubgroupInfo(
                     number = parsed?.number?.takeIf { it.isNotBlank() } ?: (index + 1).toString(),
-                    teacher = parsed?.teacher?.takeIf { it.isNotBlank() } ?: event.teacher,
+                    teacher = resolveSubgroupTeacher(event, index)
+                        ?: parsed?.teacher?.takeIf { it.isNotBlank() }
+                        ?: event.teacher,
                     room = parsed?.room?.takeIf { it.isNotBlank() } ?: event.location
                 )
             }
