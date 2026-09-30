@@ -116,26 +116,58 @@ data class ClassEvent(
             }
 
             val list = mutableListOf<SubgroupInfo>()
+
+            // All teachers mentioned in the event: every "Преподаватель: ..." line of the
+            // description plus the (possibly comma-separated) teacher field.
+            val teacherPool = (
+                TEACHER_LINE_REGEX.findAll(description).flatMap { splitNames(it.groupValues[1]) }.toList() +
+                    splitNames(teacher)
+                ).distinct()
+            val roomPool = splitNames(location)
+
             if (description.contains("подгрупп", ignoreCase = true) || description.contains("ауд", ignoreCase = true)) {
-                val lines = description.lines().filter { it.isNotBlank() }
-                var idx = 1
-                for (line in lines) {
-                    if (line.contains("подгрупп", ignoreCase = true) || line.contains("ауд", ignoreCase = true)) {
-                        val num = if (line.contains("1")) "1" else if (line.contains("2")) "2" else idx.toString()
-                        val room = if ("ауд" in line) "ауд. " + line.substringAfter("ауд").trim().trim('.', ':', ' ') else location
-                        val teacherName = line.substringBefore("ауд").substringAfter(":").trim().ifEmpty { teacher }
-                        list.add(SubgroupInfo(num, teacherName, room))
-                        idx++
+                val allLines = description.lines().filter { it.isNotBlank() }
+                val blockLines = allLines.filter { it.contains("подгрупп", ignoreCase = true) }
+                    .ifEmpty { allLines.filter { it.contains("ауд", ignoreCase = true) } }
+                blockLines.forEachIndexed { i, line ->
+                    val num = SUBGROUP_NUMBER_REGEX.find(line)?.groupValues?.getOrNull(1)
+                        ?.takeIf { it.isNotBlank() } ?: (i + 1).toString()
+                    val room = if ("ауд" in line.lowercase()) {
+                        "ауд. " + line.substringAfter("ауд").trim().trim('.', ':', ' ')
+                    } else {
+                        roomPool.takeIf { it.size == blockLines.size }?.getOrNull(i) ?: location
                     }
+                    val ownName = line.substringBefore("ауд")
+                        .replace(SUBGROUP_LABEL_REGEX, " ")
+                        .replace(Regex("""(?i)(?:Преподаватель|Педагог|Тренер|Учитель|Инструктор|Ведущий)\s*:"""), " ")
+                        .trim().trim(',', ';', ':', '-', '–', '—', '.', ' ')
+                    val teacherName = ownName.ifBlank {
+                        // The line names no teacher: take the i-th teacher instead of always the first.
+                        teacherPool.getOrNull(i) ?: teacher
+                    }
+                    list.add(SubgroupInfo(num, teacherName, room))
                 }
             }
-            if (list.isEmpty() && teacher.contains(",")) {
-                val teachers = teacher.split(",").map { it.trim() }.filter { it.isNotBlank() }
-                if (teachers.size > 1) {
-                    teachers.forEachIndexed { i, t -> list.add(SubgroupInfo((i + 1).toString(), t, location.ifEmpty { "ауд. —" })) }
+            if (list.isEmpty() && teacherPool.size > 1) {
+                teacherPool.forEachIndexed { i, t ->
+                    val room = roomPool.takeIf { it.size == teacherPool.size }?.getOrNull(i)
+                        ?: location.ifEmpty { "ауд. —" }
+                    list.add(SubgroupInfo((i + 1).toString(), t, room))
                 }
             }
         return list
+    }
+
+    private fun splitNames(text: String): List<String> =
+        text.split(Regex("""[,;\n]""")).map { it.trim() }
+            .filter { it.isNotBlank() && !it.matches(Regex("""(?i)подгруппа\s*\d+""")) }
+
+    private companion object {
+        val TEACHER_LINE_REGEX = Regex(
+            """(?im)(?:Преподаватель|Педагог|Тренер|Учитель|Инструктор|Ведущий)\s*:\s*(.+)$"""
+        )
+        val SUBGROUP_NUMBER_REGEX = Regex("""(?i)(?:под)?групп\w*\s*(\d+)""")
+        val SUBGROUP_LABEL_REGEX = Regex("""(?i)(?:под)?групп\w*\s*\d*""")
     }
 
     private fun extractTeacherName(): String {

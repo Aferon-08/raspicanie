@@ -78,7 +78,7 @@ private val subgroupTeacherLineRegex = Regex(
     """(?im)(?:под)?групп[аы]?\s*(\d+)\s*[:\-–—)]\s*(.+)$"""
 )
 private val plainTeacherLineRegex = Regex(
-    """(?im)^\s*(?:Преподаватель|Педагог|Тренер|Учитель|Инструктор|Ведущий)\s*:\s*(.+)$"""
+    """(?im)(?:Преподаватель|Педагог|Тренер|Учитель|Инструктор|Ведущий)\s*:\s*(.+)$"""
 )
 private val subgroupNumberInTitleRegex = Regex("""(?i)(?:под)?групп[аы]?\s*(\d+)""")
 
@@ -130,7 +130,17 @@ private fun mergeSubgroupEvents(events: List<ClassEvent>): List<ClassEvent> {
         val rows = group
             .sortedWith(compareBy<ClassEvent> { it.location }.thenBy { it.teacher }.thenBy { it.id })
             .mapIndexed { index, event ->
-                val parsed = event.displaySubgroups.firstOrNull()
+                val candidates = event.displaySubgroups
+                val ownNumber = subgroupNumberInTitleRegex
+                    .find(event.title + " " + event.rawSummary)?.groupValues?.getOrNull(1)
+                // If one event lists several subgroups (shared description), pick the one that
+                // belongs to this event instead of always taking the first.
+                val parsed = if (candidates.size > 1) {
+                    candidates.firstOrNull { ownNumber != null && it.number == ownNumber }
+                        ?: candidates.getOrNull(index)
+                } else {
+                    candidates.firstOrNull()
+                }
                 SubgroupInfo(
                     number = parsed?.number?.takeIf { it.isNotBlank() } ?: (index + 1).toString(),
                     teacher = resolveSubgroupTeacher(event, index)

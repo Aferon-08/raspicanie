@@ -189,15 +189,16 @@ object IcsParser {
 
         // Try extracting teacher from description if present
         // Patterns: "Преподаватель: Иванов И.И.", "Тренер: ...", "Педагог: ..."
-        val teacherPrefixes = listOf("Преподаватель:", "Педагог:", "Тренер:", "Учитель:", "Инструктор:", "Ведущий:")
-        for (prefix in teacherPrefixes) {
-            val idx = description.indexOf(prefix, ignoreCase = true)
-            if (idx != -1) {
-                val after = description.substring(idx + prefix.length).trim()
-                teacher = after.lines().firstOrNull()?.trim().orEmpty()
-                break
-            }
-        }
+        // Collect ALL teachers listed in the description (parallel subgroups have several).
+        val teacherRegex = Regex(
+            """(?im)(?:Преподаватель|Педагог|Тренер|Учитель|Инструктор|Ведущий)\s*:\s*(.+)$"""
+        )
+        teacher = teacherRegex.findAll(description)
+            .flatMap { it.groupValues[1].split(';').asSequence() }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .joinToString(", ")
 
         // Clean title if summary has teacher in parentheses
         val matchParens = Regex("""^(.*?)\s*\((.*?)\)$""").find(summary)
