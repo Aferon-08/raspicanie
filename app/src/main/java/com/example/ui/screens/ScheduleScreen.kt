@@ -345,10 +345,9 @@ fun ScheduleScreen(
                                 }
                             ) {
                                 if (uiState.isSyncing) {
-                                    CircularProgressIndicator(
+                                    androidx.compose.material3.LoadingIndicator(
                                         modifier = Modifier.size(21.dp),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        strokeWidth = 2.5.dp
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 } else {
                                     Icon(

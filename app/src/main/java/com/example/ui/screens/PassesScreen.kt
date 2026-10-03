@@ -27,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -55,24 +56,32 @@ fun PassesScreen(
 ) {
     val dateFormat = SimpleDateFormat("d MMMM, HH:mm", Locale("ru"))
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-    ) {
-        // Header
-        Text(
-            text = "Пропуски и изменения",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            text = "Учёт посещаемости и история обновлений расписания",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    val scrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-        Spacer(modifier = Modifier.height(20.dp))
+    androidx.compose.material3.Scaffold(
+        topBar = {
+            androidx.compose.material3.LargeTopAppBar(
+                title = {
+                    Column {
+                        Text("Пропуски и изменения")
+                        Text(
+                            text = "Учёт посещаемости и история обновлений",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        },
+        modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection)
+    ) { innerPadding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(horizontal = 20.dp)
+    ) {
 
         // Stat cards
         Row(
@@ -178,7 +187,7 @@ fun PassesScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(18.dp))
-                    OutlinedButton(onClick = onSimulateChange) {
+                    androidx.compose.material3.FilledTonalButton(onClick = onSimulateChange) {
                         Text("Смоделировать перенос занятия")
                     }
                 }
@@ -255,4 +264,6 @@ fun PassesScreen(
             }
         }
     }
+    }
 }
+

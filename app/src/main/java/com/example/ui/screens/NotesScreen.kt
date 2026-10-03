@@ -26,6 +26,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -52,41 +53,46 @@ fun NotesScreen(
     var titleInput by remember { mutableStateOf("") }
     var contentInput by remember { mutableStateOf("") }
 
+    val scrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
+        topBar = {
+            androidx.compose.material3.LargeTopAppBar(
+                title = {
+                    Column {
+                        Text("Заметки")
+                        Text(
+                            text = "Задания, конспекты и напоминания к занятиям",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        },
         floatingActionButton = {
-            FloatingActionButton(
+            androidx.compose.material3.ExtendedFloatingActionButton(
                 onClick = {
                     titleInput = ""
                     contentInput = ""
                     showAddDialog = true
                 },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = MaterialTheme.shapes.large
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Добавить заметку")
-            }
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                shape = MaterialTheme.shapes.extraLarge,
+                text = { Text("Добавить") },
+                icon = { Icon(Icons.Default.Add, contentDescription = "Добавить заметку") }
+            )
         },
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp)
         ) {
-            Text(
-                text = "Заметки",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Задания, конспекты и напоминания к занятиям",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
 
             if (notes.isEmpty()) {
                 Box(
@@ -209,7 +215,7 @@ fun NotesScreen(
                         TextButton(onClick = { showAddDialog = false }) {
                             Text("Отмена")
                         }
-                        Button(
+                        androidx.compose.material3.FilledTonalButton(
                             onClick = {
                                 if (titleInput.isNotBlank()) {
                                     onSaveNote(titleInput.trim(), contentInput.trim())

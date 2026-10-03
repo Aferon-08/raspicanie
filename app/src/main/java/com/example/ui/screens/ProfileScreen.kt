@@ -52,6 +52,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -81,6 +85,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.repository.SavedGroup
 import kotlin.math.abs
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     uiState: ScheduleUiState,
@@ -106,6 +111,28 @@ fun ProfileScreen(
     var groupDialog by remember { mutableStateOf<GroupDialogState?>(null) }
     val activeGroupUrl = uiState.customUrl
         ?: ("https://planovo.pro/api/v1/public/groups/" + uiState.groupId + "/calendar.ics")
+
+    val scrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    androidx.compose.material3.Scaffold(
+        topBar = {
+            androidx.compose.material3.LargeTopAppBar(
+                title = {
+                    Column {
+                        Text("Профиль и настройки")
+                        Text(
+                            text = if (groupManagerExpanded) "Сохранённые группы · листай карточки влево или вправо"
+                            else "Параметры группы, стиль Material 3 Expressive и уведомления",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        },
+        modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection)
+    ) { innerPadding ->
 
     AnimatedContent(
         targetState = groupManagerExpanded,
@@ -147,22 +174,13 @@ fun ProfileScreen(
             }
         },
         label = "profile_group_mode",
-        modifier = modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().padding(innerPadding)
     ) { expanded ->
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            item {
-                Text("Профиль и настройки", style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    if (expanded) "Сохранённые группы · листай карточки влево или вправо"
-                    else "Параметры группы, стиль Material 3 Expressive и уведомления",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
 
             item {
                 AnimatedContent(
@@ -252,21 +270,31 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(14.dp))
                         Text("Режим оформления", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf(
-                                ThemeMode.SYSTEM to "Системная",
-                                ThemeMode.DARK to "Тёмная",
-                                ThemeMode.LIGHT to "Светлая"
-                            ).forEach { (mode, label) ->
-                                FilterChip(
-                                    selected = uiState.themeMode == mode,
-                                    onClick = { onSetThemeMode(mode) },
-                                    label = { Text(label) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                )
+                        val themeOptions = listOf("Системная", "Тёмная", "Светлая")
+                        val selectedThemeIndex = when (uiState.themeMode) {
+                            ThemeMode.SYSTEM -> 0
+                            ThemeMode.DARK -> 1
+                            ThemeMode.LIGHT -> 2
+                        }
+                        
+                        androidx.compose.material3.SingleChoiceSegmentedButtonRow(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            themeOptions.forEachIndexed { index, label ->
+                                SegmentedButton(
+                                    selected = selectedThemeIndex == index,
+                                    onClick = {
+                                        val newMode = when (index) {
+                                            0 -> ThemeMode.SYSTEM
+                                            1 -> ThemeMode.DARK
+                                            else -> ThemeMode.LIGHT
+                                        }
+                                        onSetThemeMode(newMode)
+                                    },
+                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = themeOptions.size)
+                                ) {
+                                    Text(label)
+                                }
                             }
                         }
                     }
@@ -294,9 +322,13 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(14.dp))
                         Text("Напоминать до начала пары:", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf(5, 10, 15, 30, 60).forEach { mins ->
-                                FilterChip(
+                        val opts = listOf(5, 10, 15, 30, 60)
+                        
+                        androidx.compose.material3.SingleChoiceSegmentedButtonRow(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            opts.forEachIndexed { index, mins ->
+                                SegmentedButton(
                                     selected = selectedLeadTime == mins,
                                     onClick = {
                                         selectedLeadTime = mins
@@ -307,16 +339,14 @@ fun ProfileScreen(
                                             groupTitleInput.trim()
                                         )
                                     },
-                                    label = { Text(mins.toString() + " м") },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                )
+                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = opts.size)
+                                ) {
+                                    Text(mins.toString() + "м", maxLines = 1, softWrap = false)
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedButton(onClick = onTriggerTestNotification, modifier = Modifier.fillMaxWidth()) {
+                        androidx.compose.material3.FilledTonalButton(onClick = onTriggerTestNotification, modifier = Modifier.fillMaxWidth()) {
                             Text("Отправить тестовое уведомление")
                         }
                     }
@@ -336,13 +366,13 @@ fun ProfileScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Button(onClick = onRefresh, modifier = Modifier.weight(1f)) { Text("Синхронизация") }
-                            OutlinedButton(onClick = onSimulateChange, modifier = Modifier.weight(1f)) {
+                            androidx.compose.material3.FilledTonalButton(onClick = onRefresh, modifier = Modifier.weight(1f)) { Text("Синхронизация") }
+                            androidx.compose.material3.FilledTonalButton(onClick = onSimulateChange, modifier = Modifier.weight(1f)) {
                                 Text("Тест переноса")
                             }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
-                        OutlinedButton(
+                        androidx.compose.material3.FilledTonalButton(
                             onClick = { onSetDebugAnimationMode(!uiState.debugAnimationMode) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -357,6 +387,7 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(80.dp))
             }
         }
+    }
     }
 
     groupDialog?.let { dialog ->
@@ -455,7 +486,7 @@ private fun SavedGroupsCarousel(
             Column(modifier = Modifier.padding(24.dp)) {
                 Text("Сохранённых групп пока нет", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = onAdd, modifier = Modifier.fillMaxWidth()) {
+                androidx.compose.material3.FilledTonalButton(onClick = onAdd, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Outlined.Add, null)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Добавить группу")
@@ -750,7 +781,7 @@ private fun GroupEditorDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     TextButton(onClick = onDismiss) { Text("Отмена") }
                     Spacer(modifier = Modifier.width(4.dp))
-                    Button(
+                    androidx.compose.material3.FilledTonalButton(
                         onClick = { onSave(title, url) },
                         enabled = title.isNotBlank() && url.startsWith("http")
                     ) {
@@ -762,3 +793,8 @@ private fun GroupEditorDialog(
         }
     }
 }
+
+
+
+
+
