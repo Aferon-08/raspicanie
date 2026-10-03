@@ -536,7 +536,7 @@ fun ScheduleScreen(
         ClassDetailDialog(
             event = event,
             is24HourFormat = uiState.is24HourFormat,
-            reminderEnabled = event.id in uiState.reminderEventIds,
+            reminderEnabled = event.id in uiState. reminderEventIds,
             onDismiss = { selectedEventForDetail = null },
             onToggleReminder = { event ->
                 if (event.id in uiState.reminderEventIds) {

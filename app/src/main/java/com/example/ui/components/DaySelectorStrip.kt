@@ -207,7 +207,7 @@ fun DaySelectorStrip(
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.Top,
                 modifier = Modifier
                     .size(68.dp)
                     .graphicsLayer {
@@ -227,12 +227,13 @@ fun DaySelectorStrip(
                     color = dowColor
                 )
 
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(0.dp))
 
                 // Day number (e.g. 14, 15, 16)
                 Text(
                     text = day.dayOfMonth,
                     fontSize = 20.sp,
+                    modifier = Modifier.graphicsLayer { translationY = -3.dp.toPx() },
                     fontWeight = FontWeight.Bold,
                     color = domColor
                 )

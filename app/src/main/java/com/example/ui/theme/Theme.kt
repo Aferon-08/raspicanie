@@ -5,7 +5,10 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -28,6 +31,7 @@ import androidx.core.view.WindowCompat
  * expressive shape scale and the bouncier, spring-based "expressive" motion
  * scheme -- not just the custom components built in this app.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -69,10 +73,11 @@ fun MyApplicationTheme(
     CompositionLocalProvider(
         LocalDensity provides fixedFontScaleDensity
     ) {
-        MaterialTheme(
+        MaterialExpressiveTheme(
             colorScheme = colorScheme,
             typography = Typography,
             shapes = ExpressiveShapes,
+            motionScheme = MotionScheme.expressive(),
             content = content
         )
     }
