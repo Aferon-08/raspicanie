@@ -504,6 +504,9 @@ fun ScheduleScreen(
                                                     SubgroupClassCard(
                                                         event = event,
                                                         is24HourFormat = uiState.is24HourFormat,
+                                                        forceOngoingAnimation = uiState.debugAnimationMode,
+                                                        gearAnimationStartTimeMillis = gearAnimationStartTimeMillis,
+                                                        gearAnimationDurationMillis = if (gearAnimationFast) 760 else 1800,
                                                         onCardClick = { selectedEventForDetail = it }
                                                     )
                                                 } else {

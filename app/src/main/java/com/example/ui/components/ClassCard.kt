@@ -108,7 +108,7 @@ private class RoomBlobShape : Shape {
 
 
 @Composable
-private fun Gear(
+internal fun Gear(
     size: androidx.compose.ui.unit.Dp,
     color: Color,
     rotation: Float,
@@ -148,7 +148,7 @@ private fun Gear(
 }
 
 @Composable
-private fun GearCluster(
+internal fun GearCluster(
     isOngoing: Boolean,
     largeColor: Color,
     smallColor: Color,
@@ -367,6 +367,16 @@ fun ClassCard(
         label = "pulse_alpha"
     )
 
+    val dotAlpha by pulseInfiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ongoing_dot_alpha"
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -579,6 +589,7 @@ fun ClassCard(
                                 Box(
                                     modifier = Modifier
                                         .size(7.dp)
+                                        .graphicsLayer { alpha = dotAlpha }
                                         .clip(CircleShape)
                                         .background(MaterialTheme.colorScheme.primary)
                                 )
