@@ -87,6 +87,21 @@ fun ClassDetailDialog(
 ) {
     var liveTimeMillis by remember(event.id) { mutableLongStateOf(currentTimeMillis) }
     val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    val coroutineScope = rememberCoroutineScope()
+    var isClosing by remember { mutableStateOf(false) }
+
+    val closeWithAnimation = {
+        if (!isClosing) {
+            isClosing = true
+            coroutineScope.launch {
+                sheetState.hide()
+            }.invokeOnCompletion {
+                if (!sheetState.isVisible) {
+                    onDismiss()
+                }
+            }
+        }
+    }
 
     LaunchedEffect(event.id) {
         while (true) {
@@ -176,7 +191,7 @@ fun ClassDetailDialog(
                                 .size(40.dp)
                                 .clip(CircleShape)
                                 .background(headerContent.copy(alpha = 0.12f))
-                                .clickable { onDismiss() },
+                                .clickable { closeWithAnimation() },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
