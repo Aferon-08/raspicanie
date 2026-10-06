@@ -79,8 +79,23 @@ fun ExpressiveBottomBar(
     val selectedIndex = items.indexOfFirst { it.tab == currentTab }.takeIf { it >= 0 } ?: 0
     val animatedIndicatorIndex by animateFloatAsState(
         targetValue = selectedIndex.toFloat(),
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = 380f),
         label = "indicatorIndex"
+    )
+
+    val distance = kotlin.math.abs(selectedIndex.toFloat() - animatedIndicatorIndex)
+    val targetScaleX = 1f + (distance * 0.35f).coerceIn(0f, 0.35f)
+    val targetScaleY = 1f - (distance * 0.15f).coerceIn(0f, 0.15f)
+
+    val animatedScaleX by animateFloatAsState(
+        targetValue = targetScaleX,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
+        label = "scaleX"
+    )
+    val animatedScaleY by animateFloatAsState(
+        targetValue = targetScaleY,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
+        label = "scaleY"
     )
 
     Surface(
@@ -107,6 +122,10 @@ fun ExpressiveBottomBar(
                     Box(
                         modifier = Modifier
                             .size(indicatorSize)
+                            .graphicsLayer {
+                                scaleX = animatedScaleX
+                                scaleY = animatedScaleY
+                            }
                             .background(
                                 color = MaterialTheme.colorScheme.secondaryContainer,
                                 shape = RoundedCornerShape(18.dp)
@@ -115,7 +134,7 @@ fun ExpressiveBottomBar(
                 }
 
                 Row(modifier = Modifier.fillMaxSize()) {
-                items.forEach { item ->
+                items.forEachIndexed { index, item ->
                     val selected = currentTab == item.tab
                     
                     val iconScale by animateFloatAsState(
@@ -123,6 +142,8 @@ fun ExpressiveBottomBar(
                         animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
                         label = "iconScale"
                     )
+                    
+                    val diff = (index.toFloat() - animatedIndicatorIndex)
 
                     Box(
                         modifier = Modifier
@@ -146,6 +167,9 @@ fun ExpressiveBottomBar(
                         Box(modifier = Modifier.graphicsLayer { 
                             scaleX = iconScale
                             scaleY = iconScale
+                            if (selected) {
+                                translationX = diff * -15f // 15px is about 5dp
+                            }
                         }) {
                             if (badge > 0) {
                                 BadgedBox(badge = { Badge { Text(badge.toString()) } }) {

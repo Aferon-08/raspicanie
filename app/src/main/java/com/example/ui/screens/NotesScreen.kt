@@ -42,7 +42,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.background
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesScreen(
     notes: Map<String, String>,
@@ -102,11 +110,23 @@ fun NotesScreen(
                         .weight(1f)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "editNoteTransition")
+                        val rotation by infiniteTransition.animateFloat(
+                            initialValue = -8f,
+                            targetValue = 8f,
+                            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                                animation = androidx.compose.animation.core.tween(durationMillis = 800, easing = androidx.compose.animation.core.LinearEasing),
+                                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                            ),
+                            label = "editNoteRotation"
+                        )
                         Icon(
                             imageVector = Icons.Outlined.EditNote,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                            modifier = Modifier.size(60.dp)
+                            modifier = Modifier
+                                .size(60.dp)
+                                .graphicsLayer { rotationZ = rotation }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
@@ -130,42 +150,75 @@ fun NotesScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     items(notes.entries.toList(), key = { it.key }) { (key, value) ->
-                        Card(
-                            shape = MaterialTheme.shapes.largePlus,
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = key,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = value,
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                IconButton(onClick = { onSaveNote(key, "") }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Удалить",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                        val dismissState = androidx.compose.material3.rememberSwipeToDismissBoxState()
+                        androidx.compose.runtime.LaunchedEffect(dismissState.currentValue) {
+                            if (dismissState.currentValue == androidx.compose.material3.SwipeToDismissBoxValue.EndToStart) {
+                                onSaveNote(key, "")
                             }
                         }
+                        androidx.compose.material3.SwipeToDismissBox(
+                            state = dismissState,
+                            enableDismissFromStartToEnd = false,
+                            backgroundContent = {
+                                val color by androidx.compose.animation.animateColorAsState(
+                                    if (dismissState.targetValue == androidx.compose.material3.SwipeToDismissBoxValue.EndToStart) 
+                                        MaterialTheme.colorScheme.errorContainer 
+                                    else MaterialTheme.colorScheme.surface,
+                                    label = "dismissColor"
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(color, MaterialTheme.shapes.largePlus)
+                                        .padding(end = 16.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Удалить",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            },
+                            content = {
+                                Card(
+                                    shape = MaterialTheme.shapes.largePlus,
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = key,
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = value,
+                                                fontSize = 14.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        IconButton(onClick = { onSaveNote(key, "") }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Удалить",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -173,58 +226,57 @@ fun NotesScreen(
     }
 
     if (showAddDialog) {
-        Dialog(onDismissRequest = { showAddDialog = false }) {
-            Card(
-                shape = MaterialTheme.shapes.largePlus,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Новая заметка",
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
+        val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showAddDialog = false },
+            sheetState = sheetState,
+            modifier = Modifier.imePadding()
+        ) {
+            Column(modifier = Modifier.padding(20.dp).navigationBarsPadding()) {
+                Text(
+                    text = "Новая заметка",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(14.dp))
 
-                    OutlinedTextField(
-                        value = titleInput,
-                        onValueChange = { titleInput = it },
-                        label = { Text("Предмет или тема") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                OutlinedTextField(
+                    value = titleInput,
+                    onValueChange = { titleInput = it },
+                    label = { Text("Предмет или тема") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                    OutlinedTextField(
-                        value = contentInput,
-                        onValueChange = { contentInput = it },
-                        label = { Text("Текст заметки / ДЗ") },
-                        minLines = 3,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                OutlinedTextField(
+                    value = contentInput,
+                    onValueChange = { contentInput = it },
+                    label = { Text("Текст заметки / ДЗ") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = { showAddDialog = false }) {
-                            Text("Отмена")
-                        }
-                        androidx.compose.material3.FilledTonalButton(
-                            onClick = {
-                                if (titleInput.isNotBlank()) {
-                                    onSaveNote(titleInput.trim(), contentInput.trim())
-                                    showAddDialog = false
-                                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { showAddDialog = false }) {
+                        Text("Отмена")
+                    }
+                    androidx.compose.material3.FilledTonalButton(
+                        onClick = {
+                            if (titleInput.isNotBlank()) {
+                                onSaveNote(titleInput.trim(), contentInput.trim())
+                                showAddDialog = false
                             }
-                        ) {
-                            Text("Сохранить")
                         }
+                    ) {
+                        Text("Сохранить")
                     }
                 }
             }

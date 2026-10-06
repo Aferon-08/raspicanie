@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -53,6 +54,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -347,6 +349,24 @@ fun ClassCard(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+        }
+    }
+
+    val pulseInfiniteTransition = rememberInfiniteTransition(label = "pulse_halo")
+    val pulseAlpha by pulseInfiniteTransition.animateFloat(
+        initialValue = 0.1f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_alpha"
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -354,8 +374,20 @@ fun ClassCard(
                 scaleX = pressScale
                 scaleY = pressScale
             }
-            .clip(cardShape)
     ) {
+        if (isOngoing) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        scaleX = 1.04f
+                        scaleY = 1.06f
+                        alpha = pulseAlpha
+                    }
+                    .background(MaterialTheme.colorScheme.primary, cardShape)
+            )
+        }
+        
         Card(
             shape = cardShape,
             colors = CardDefaults.cardColors(containerColor = cardBackground),
@@ -363,381 +395,385 @@ fun ClassCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(214.dp)
+                .clip(cardShape)
+                .clipToBounds()
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null
                 ) { onCardClick(event) }
                 .testTag("class_card_${event.id}")
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .padding(horizontal = 20.dp, vertical = 18.dp)
-            ) {
-                val chipBg = when {
-                    isOngoing -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
-                    isCancelled -> MaterialTheme.colorScheme.errorContainer
-                    else -> MaterialTheme.colorScheme.secondaryContainer
-                }
-                val chipTextColor = when {
-                    isOngoing -> MaterialTheme.colorScheme.onPrimary
-                    else -> MaterialTheme.colorScheme.onSecondaryContainer
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .padding(horizontal = 20.dp, vertical = 18.dp)
                 ) {
-                    Column(modifier = Modifier.width(68.dp)) {
-                        Text(
-                            text = startStr,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-0.3).sp,
-                            color = contentPrimaryColor,
-                            textDecoration = if (isCancelled) TextDecoration.LineThrough else TextDecoration.None
+                    val chipBg = when {
+                        isOngoing -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                        isCancelled -> MaterialTheme.colorScheme.errorContainer
+                        else -> MaterialTheme.colorScheme.secondaryContainer
+                    }
+                    val chipTextColor = when {
+                        isOngoing -> MaterialTheme.colorScheme.onPrimary
+                        else -> MaterialTheme.colorScheme.onSecondaryContainer
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(modifier = Modifier.width(68.dp)) {
+                            Text(
+                                text = startStr,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = (-0.3).sp,
+                                color = contentPrimaryColor,
+                                textDecoration = if (isCancelled) TextDecoration.LineThrough else TextDecoration.None
+                            )
+                            Text(
+                                text = endStr,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = contentSecondaryColor
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(chipBg)
+                                    .padding(horizontal = 12.dp, vertical = 5.dp)
+                            ) {
+                                Text(
+                                    text = if (isCancelled) "Отменено" else event.displayLessonType,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isCancelled) MaterialTheme.colorScheme.onErrorContainer else chipTextColor
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(9.dp))
+
+                            Text(
+                                text = event.title,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = contentPrimaryColor,
+                                lineHeight = 21.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            Spacer(modifier = Modifier.height(9.dp))
+
+                            if (event.isOnline) {
+                                val meetingUrl = event.onlineMeetingUrl
+                                val meetingId = event.onlineMeetingId
+                                val meetingPassword = event.onlineMeetingPassword
+                                val hasMeetingDetails = meetingUrl != null || meetingId != null || meetingPassword != null
+
+                                if (hasMeetingDetails) {
+                                    Spacer(modifier = Modifier.height(9.dp))
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(MaterialTheme.shapes.small)
+                                            .background(
+                                                if (isOngoing) {
+                                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)
+                                                } else {
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                                }
+                                            )
+                                            .padding(horizontal = 11.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = "ОНЛАЙН • ZOOM",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 0.4.sp,
+                                            color = if (isOngoing) {
+                                                MaterialTheme.colorScheme.onPrimary
+                                            } else {
+                                                MaterialTheme.colorScheme.primary
+                                            }
+                                        )
+
+                                        meetingId?.let { id ->
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = "Конференция: $id",
+                                                fontSize = 12.sp,
+                                                color = contentSecondaryColor,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+
+                                        meetingPassword?.let { password ->
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = "Пароль: $password",
+                                                fontSize = 12.sp,
+                                                color = contentSecondaryColor,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+
+                                        meetingUrl?.let { url ->
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = url,
+                                                fontSize = 11.sp,
+                                                color = if (isOngoing) {
+                                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                                                } else {
+                                                    MaterialTheme.colorScheme.primary
+                                                },
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (isCancelled) {
+                                Spacer(modifier = Modifier.height(5.dp))
+                                Text(
+                                    text = "Занятие отменено",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(78.dp))
+                    }
+
+                    if (isOngoing) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        val remainingMin = event.getRemainingMinutes(liveTimeMillis)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onPrimary)
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "СЕЙЧАС ИДЁТ",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 0.5.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "осталось $remainingMin мин",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                            )
+                        }
+
+                        SquigglyProgressBar(
+                            progress = event.getProgress(liveTimeMillis),
+                            activeColor = MaterialTheme.colorScheme.onPrimary,
+                            trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
+                            modifier = Modifier.padding(top = 2.dp)
                         )
+                    } else if (isUpcomingSoon) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        val minutesUntil = event.getMinutesUntilStart(liveTimeMillis)
+                        val timeUntilText = if (minutesUntil >= 60) {
+                            val hours = minutesUntil / 60
+                            val mins = minutesUntil % 60
+                            if (mins > 0) "через $hours ч $mins мин" else "через $hours ч"
+                        } else {
+                            "через $minutesUntil мин"
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Начнётся $timeUntilText",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                    } else if (isCompleted) {
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = endStr,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
+                            text = "Завершено",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
                             color = contentSecondaryColor
                         )
                     }
 
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(chipBg)
-                                .padding(horizontal = 12.dp, vertical = 5.dp)
+                    val subgroups = event.displaySubgroups
+                    if (subgroups.size > 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = if (isCancelled) "Отменено" else event.displayLessonType,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isCancelled) MaterialTheme.colorScheme.onErrorContainer else chipTextColor
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(9.dp))
-
-                        Text(
-                            text = event.title,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = contentPrimaryColor,
-                            lineHeight = 21.sp,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        Spacer(modifier = Modifier.height(9.dp))
-
-                        if (event.isOnline) {
-                            val meetingUrl = event.onlineMeetingUrl
-                            val meetingId = event.onlineMeetingId
-                            val meetingPassword = event.onlineMeetingPassword
-                            val hasMeetingDetails = meetingUrl != null || meetingId != null || meetingPassword != null
-
-                            if (hasMeetingDetails) {
-                                Spacer(modifier = Modifier.height(9.dp))
-
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(MaterialTheme.shapes.small)
-                                        .background(
-                                            if (isOngoing) {
-                                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)
-                                            } else {
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                                            }
-                                        )
-                                        .padding(horizontal = 11.dp, vertical = 8.dp)
-                                ) {
+                            subgroups.forEach { subgroup ->
+                                Column(modifier = Modifier.fillMaxWidth()) {
                                     Text(
-                                        text = "ОНЛАЙН • ZOOM",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 0.4.sp,
-                                        color = if (isOngoing) {
-                                            MaterialTheme.colorScheme.onPrimary
-                                        } else {
-                                            MaterialTheme.colorScheme.primary
-                                        }
+                                        text = subgroup.teacher.ifBlank { "Преподаватель не указан" },
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = contentSecondaryColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
-
-                                    meetingId?.let { id ->
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "Конференция: $id",
-                                            fontSize = 12.sp,
-                                            color = contentSecondaryColor,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    meetingPassword?.let { password ->
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = "Пароль: $password",
-                                            fontSize = 12.sp,
-                                            color = contentSecondaryColor,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    meetingUrl?.let { url ->
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = url,
-                                            fontSize = 11.sp,
-                                            color = if (isOngoing) {
-                                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
-                                            } else {
-                                                MaterialTheme.colorScheme.primary
-                                            },
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (subgroup.room.isNotBlank()) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.MeetingRoom,
+                                                contentDescription = null,
+                                                tint = contentSecondaryColor,
+                                                modifier = Modifier.size(17.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = subgroup.room.replace("Кабинет ", "").replace("каб. ", ""),
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = contentPrimaryColor,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-
-                        if (isCancelled) {
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Занятие отменено",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(78.dp))
-                }
-
-                if (isOngoing) {
-                    Spacer(modifier = Modifier.height(14.dp))
-                    val remainingMin = event.getRemainingMinutes(liveTimeMillis)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.onPrimary)
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "СЕЙЧАС ИДЁТ",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 0.5.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "осталось $remainingMin мин",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
-                        )
-                    }
-
-                    SquigglyProgressBar(
-                        progress = event.getProgress(liveTimeMillis),
-                        activeColor = MaterialTheme.colorScheme.onPrimary,
-                        trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                } else if (isUpcomingSoon) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    val minutesUntil = event.getMinutesUntilStart(liveTimeMillis)
-                    val timeUntilText = if (minutesUntil >= 60) {
-                        val hours = minutesUntil / 60
-                        val mins = minutesUntil % 60
-                        if (mins > 0) "через $hours ч $mins мин" else "через $hours ч"
                     } else {
-                        "через $minutesUntil мин"
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .padding(top = 2.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.tertiaryContainer)
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Schedule,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Начнётся $timeUntilText",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                } else if (isCompleted) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Завершено",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = contentSecondaryColor
-                    )
-                }
-
-                val subgroups = event.displaySubgroups
-                if (subgroups.size > 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        subgroups.forEach { subgroup ->
-                            Column(modifier = Modifier.fillMaxWidth()) {
+                        val teacher = subgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() } ?: event.teacher
+                        if (teacher.isNotBlank()) {
+                            Spacer(modifier = Modifier.weight(1f))
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Person,
+                                    contentDescription = null,
+                                    tint = contentSecondaryColor,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = subgroup.teacher.ifBlank { "Преподаватель не указан" },
-                                    fontSize = 12.sp,
+                                    text = teacher,
+                                    fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = contentSecondaryColor,
+                                    color = contentPrimaryColor,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (subgroup.room.isNotBlank()) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.MeetingRoom,
-                                            contentDescription = null,
-                                            tint = contentSecondaryColor,
-                                            modifier = Modifier.size(17.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = subgroup.room.replace("Кабинет ", "").replace("каб. ", ""),
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = contentPrimaryColor,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                }
                             }
                         }
                     }
-                } else {
-                    val teacher = subgroups.firstOrNull()?.teacher?.takeIf { it.isNotBlank() } ?: event.teacher
-                    if (teacher.isNotBlank()) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                }
+
+                if (room.isNotBlank() && event.displaySubgroups.size <= 1) {
+                    GearCluster(
+                        isOngoing = isOngoing,
+                        largeColor = if (isOngoing) {
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
+                        } else {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        },
+                        smallColor = if (isOngoing) {
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.42f)
+                        } else {
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.78f)
+                        },
+                        animationStartTimeMillis = gearAnimationStartTimeMillis,
+                        animationDurationMillis = gearAnimationDurationMillis,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 12.dp, y = 8.dp)
+                            .size(width = 168.dp, height = 198.dp)
+                    )
+
+                    // Кабинет расположен внутри большой шестерёнки и не вращается вместе с ней.
+                    // Отдельный слой поверх шестерёнки: его центр совпадает с центром большой шестерёнки.
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 24.dp, y = 10.dp)
+                            .size(154.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.size(116.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.Person,
+                                imageVector = Icons.Outlined.MeetingRoom,
                                 contentDescription = null,
                                 tint = contentSecondaryColor,
                                 modifier = Modifier.size(19.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.height(3.dp))
                             Text(
-                                text = teacher,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                text = roomText,
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.Bold,
                                 color = contentPrimaryColor,
+                                textAlign = TextAlign.Center,
                                 maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
-                }
-            }
-        }
-
-        if (room.isNotBlank() && event.displaySubgroups.size <= 1) {
-            GearCluster(
-                isOngoing = isOngoing,
-                largeColor = if (isOngoing) {
-                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
-                } else {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                },
-                smallColor = if (isOngoing) {
-                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.42f)
-                } else {
-                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.78f)
-                },
-                animationStartTimeMillis = gearAnimationStartTimeMillis,
-                animationDurationMillis = gearAnimationDurationMillis,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = 12.dp, y = 8.dp)
-                    .size(width = 168.dp, height = 198.dp)
-            )
-
-            // Кабинет расположен внутри большой шестерёнки и не вращается вместе с ней.
-            // Отдельный слой поверх шестерёнки: его центр совпадает с центром большой шестерёнки.
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = 24.dp, y = 10.dp)
-                    .size(154.dp)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.size(116.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.MeetingRoom,
-                        contentDescription = null,
-                        tint = contentSecondaryColor,
-                        modifier = Modifier.size(19.dp)
-                    )
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        text = roomText,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = contentPrimaryColor,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
             }
         }

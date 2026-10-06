@@ -16,10 +16,13 @@
       </SelectionState>
       <SelectionState runConfigName="main">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-10-03T18:09:04.488657500Z">
+        <DropdownSelection timestamp="2026-10-03T17:31:45.667995500Z">
           <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="FirebaseDirectAccess" identifier="reservation=projects/kxbqza-05923a4f/deviceSessions/session-168s1v0r8n2gm" />
+            </handle>
             <template>
-              <DeviceId pluginId="FirebaseDirectAccess" type="TEMPLATE" identifier="model_id=pa3q/36" />
+              <DeviceId pluginId="FirebaseDirectAccess" type="TEMPLATE" identifier="model_id=a56x/35" />
             </template>
           </Target>
         </DropdownSelection>

@@ -34,6 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -159,6 +161,25 @@ fun PassesScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        var selectedFilter by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("Все") }
+        val filters = listOf("Все", "Перенос", "Отмена", "Новое")
+
+        if (changes.isNotEmpty()) {
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(filters) { filter ->
+                    androidx.compose.material3.FilterChip(
+                        selected = selectedFilter == filter,
+                        onClick = { selectedFilter = filter },
+                        label = { Text(filter) }
+                    )
+                }
+            }
+        }
+
         if (changes.isEmpty()) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -193,12 +214,24 @@ fun PassesScreen(
                 }
             }
         } else {
+            val filteredChanges = androidx.compose.runtime.remember(changes, selectedFilter) {
+                if (selectedFilter == "Все") changes else {
+                    changes.filter { item ->
+                        when (selectedFilter) {
+                            "Перенос" -> item.changeType == ChangeType.TIME_CHANGED || item.changeType == ChangeType.LOCATION_CHANGED
+                            "Отмена" -> item.changeType == ChangeType.CANCELLED
+                            "Новое" -> item.changeType == ChangeType.NEW_CLASS
+                            else -> true
+                        }
+                    }
+                }
+            }
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 16.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(changes, key = { it.id }) { item ->
+                items(filteredChanges, key = { it.id }) { item ->
                     val isCancel = item.changeType == ChangeType.CANCELLED
                     val badgeColor = if (isCancel) StatusCancelledRed else StatusChangedYellow
                     val badgeText = when (item.changeType) {

@@ -496,22 +496,30 @@ private fun SavedGroupsCarousel(
         return
     }
 
-    var selectedIndex by remember(groups, activeGroupId) {
-        mutableIntStateOf(groups.indexOfFirst { it.url == activeGroupId }.coerceAtLeast(0))
-    }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    var isDragging by remember { mutableStateOf(false) }
-    var previousGroupCount by remember { mutableIntStateOf(groups.size) }
-    val density = LocalDensity.current
-    val currentSelectedIndex by rememberUpdatedState(selectedIndex)
+    val initialPage = groups.indexOfFirst { it.url == activeGroupId }.coerceAtLeast(0)
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { groups.size }
+    )
 
-    LaunchedEffect(groups.size) { previousGroupCount = groups.size }
+    LaunchedEffect(activeGroupId, groups) {
+        val newIndex = groups.indexOfFirst { it.url == activeGroupId }.coerceAtLeast(0)
+        if (pagerState.currentPage != newIndex) {
+            pagerState.animateScrollToPage(newIndex)
+        }
+    }
+
+    LaunchedEffect(pagerState.currentPage) {
+        val currentGroup = groups.getOrNull(pagerState.currentPage)
+        if (currentGroup != null && currentGroup.url != activeGroupId) {
+            onGroupSelected(currentGroup.id)
+        }
+    }
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val availableCardWidth = maxWidth - 56.dp
+        val currentMaxWidth = maxWidth
+        val availableCardWidth = currentMaxWidth - 56.dp
         val cardWidth = if (availableCardWidth < 420.dp) availableCardWidth else 420.dp
-        val cardWidthPx = with(density) { cardWidth.toPx() }
-        val sideGapPx = cardWidthPx * 0.78f
 
         Column {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -534,102 +542,31 @@ private fun SavedGroupsCarousel(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Box(
+            androidx.compose.foundation.pager.HorizontalPager(
+                state = pagerState,
+                contentPadding = PaddingValues(horizontal = (currentMaxWidth - cardWidth) / 2),
+                pageSpacing = 16.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(238.dp)
-                    .pointerInput(groups) {
-                        detectHorizontalDragGestures(
-                            onDragStart = {
-                                isDragging = true
-                            },
-                            onDragEnd = {
-                                val threshold = cardWidthPx * 0.20f
-                                val releasedOffset = dragOffset
-                                when {
-                                    releasedOffset <= -threshold && currentSelectedIndex < groups.lastIndex -> {
-                                        val nextIndex = currentSelectedIndex + 1
-                                        selectedIndex = nextIndex
-                                        onGroupSelected(groups[nextIndex].id)
-                                    }
-                                    releasedOffset >= threshold && currentSelectedIndex > 0 -> {
-                                        val nextIndex = currentSelectedIndex - 1
-                                        selectedIndex = nextIndex
-                                        onGroupSelected(groups[nextIndex].id)
-                                    }
-                                }
-                                isDragging = false
-                                dragOffset = 0f
-                            },
-                            onHorizontalDrag = { _, amount ->
-                                dragOffset += amount
-                            }
-                        )
-                    }
-            ) {
-                (-1..1).forEach { relative ->
-                    val index = selectedIndex + relative
-                    if (index !in groups.indices) return@forEach
-                    val group = groups[index]
-                    val isCurrent = relative == 0
-                    val progress = if (cardWidthPx == 0f) 0f else (dragOffset / cardWidthPx).coerceIn(-1f, 1f)
-                    val liveTranslation = relative * sideGapPx + if (isCurrent) dragOffset else dragOffset * 0.22f
-                    val liveDistance = abs(relative.toFloat() + if (isCurrent) progress else progress * 0.18f)
-                    val liveScale = (1f - liveDistance * 0.10f).coerceAtLeast(0.84f)
-                    val liveRotation = (-progress * 8f) + relative * 2.5f
-                    val liveAlpha = if (liveDistance > 1.4f) 0f else 1f
-                    val animatedTranslation by animateFloatAsState(
-                        targetValue = if (isDragging) liveTranslation else relative * sideGapPx,
-                        animationSpec = spring(dampingRatio = 0.72f, stiffness = 420f),
-                        label = "group_card_translation_$relative"
-                    )
-                    val animatedScale by animateFloatAsState(
-                        targetValue = if (isDragging) liveScale else (1f - abs(relative) * 0.10f).coerceAtLeast(0.84f),
-                        animationSpec = spring(dampingRatio = 0.78f, stiffness = 460f),
-                        label = "group_card_scale_$relative"
-                    )
-                    val animatedRotation by animateFloatAsState(
-                        targetValue = if (isDragging) liveRotation else relative * 2.5f,
-                        animationSpec = spring(dampingRatio = 0.76f, stiffness = 430f),
-                        label = "group_card_rotation_$relative"
-                    )
-                    val animatedAlpha by animateFloatAsState(
-                        targetValue = if (isDragging) liveAlpha else 1f,
-                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 500f),
-                        label = "group_card_alpha_$relative"
-                    )
-                    val isNewlyAddedCard = groups.size > previousGroupCount && index == groups.lastIndex
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = !isNewlyAddedCard,
-                        enter = fadeIn(animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f)) +
-                            scaleIn(initialScale = 0.84f, animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)) +
-                            androidx.compose.animation.slideInHorizontally(
-                                initialOffsetX = { width -> -width / 2 },
-                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
-                            ),
-                        exit = fadeOut(animationSpec = spring(dampingRatio = 0.9f, stiffness = 520f)),
-                        modifier = Modifier
-                            .width(cardWidth)
-                            .align(Alignment.Center)
-                            .zIndex(if (isCurrent) 2f else 1f),
-                        content = {
-
-                        GroupCarouselCard(
-                            group = group,
-                            isCurrent = isCurrent,
-                            modifier = Modifier.graphicsLayer {
-                                translationX = animatedTranslation
-                                scaleX = animatedScale
-                                scaleY = animatedScale
-                                rotationY = animatedRotation
-                                cameraDistance = 14f * density.density
-                                alpha = animatedAlpha
-                            },
-                            onEdit = { onEdit(group) }
-                        )
-                        }
-                    )
-                }
+            ) { page ->
+                val group = groups[page]
+                GroupCarouselCard(
+                    group = group,
+                    isCurrent = page == pagerState.currentPage,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                            val absoluteOffset = kotlin.math.abs(pageOffset)
+                            val liveScale = (1f - absoluteOffset * 0.10f).coerceAtLeast(0.84f)
+                            scaleX = liveScale
+                            scaleY = liveScale
+                            alpha = (1f - absoluteOffset * 0.3f).coerceAtLeast(0f)
+                            translationX = pageOffset * 50f
+                        },
+                    onEdit = { onEdit(group) }
+                )
             }
 
             Row(
@@ -637,17 +574,17 @@ private fun SavedGroupsCarousel(
                 horizontalArrangement = Arrangement.Center
             ) {
                 groups.forEachIndexed { index, _ ->
-                    val isSelected = index == selectedIndex
+                    val isSelected = index == pagerState.currentPage
                     val indicatorSize by animateDpAsState(
                         targetValue = if (isSelected) 18.dp else 7.dp,
                         animationSpec = spring(dampingRatio = 0.72f, stiffness = 520f),
-                        label = "group_indicator_size_$index"
+                        label = "group_indicator_size_" + index
                     )
                     val indicatorColor by animateColorAsState(
                         targetValue = if (isSelected) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.outlineVariant,
                         animationSpec = spring(dampingRatio = 0.82f, stiffness = 500f),
-                        label = "group_indicator_color_$index"
+                        label = "group_indicator_color_" + index
                     )
                     Box(
                         modifier = Modifier
@@ -661,7 +598,6 @@ private fun SavedGroupsCarousel(
         }
     }
 }
-
 @Composable
 private fun GroupCarouselCard(
     group: SavedGroup,
